@@ -1,95 +1,99 @@
-# English-app
+# English-German App
 
-A minimal PWA to practice English vocabulary with German translations.
-Built with vanilla JavaScript, Vite, and the Web Speech API.
+A single-page web app to practise **English** and **German** vocabulary and pronunciation, with every phrase translated into **Portuguese**.
+
+Plain HTML, CSS and JavaScript modules. No framework, no build step required to run.
 
 ## Features
-- **33 hard-coded phrases** (A1–B1), each with EN text + DE translation.
-- **Text-to-Speech** via `SpeechSynthesis` (native browser voices).
-- **Speech Recognition** via `SpeechRecognition` (Chrome/Edge) for pronunciation practice.
-- **XP / Level system** persisted in `localStorage`.
-- **Offline-first PWA** (Vite PWA plugin, service worker, installable).
-- **Optional Firebase** (Auth + Firestore) for cloud sync — works fully offline without it.
-- **Zero framework** — single HTML entry point, ~2 KB gzipped JS.
+
+- **33 phrases** across CEFR levels **A1, A2 and B1**
+- Switch the target language between **English** and **German**
+- Portuguese translation shown alongside every phrase
+- **Text-to-speech** playback of the target phrase (Web Speech API)
+- **Speech recognition** to check pronunciation (Web Speech API)
+- **XP and level progression** persisted in `localStorage`
+- **Optional cloud sync** of progress via Google sign-in (Firebase Auth + Firestore)
+- Works fully offline in local-only mode, without any Firebase configuration
 
 ## Tech Stack
-- **Vite 8** (dev server, build, PWA plugin)
-- **Vitest** + **jsdom** + **v8** coverage
-- **Firebase 11** (Auth, Firestore) — loaded dynamically only if configured
-- **Vanilla ES modules** (no React, Vue, Svelte)
 
-## Quick Start
+| Area | Choice |
+| --- | --- |
+| Markup and logic | Vanilla HTML + JavaScript modules |
+| Speech | `window.speechSynthesis`, `SpeechRecognition` / `webkitSpeechRecognition` |
+| Auth and sync (optional) | Firebase 12 (`firebase/app`, `firebase/auth`, `firebase/firestore`) |
+| Tests | Vitest with jsdom and v8 coverage |
+
+## Getting Started
+
 ```bash
 npm install
-npm run dev        # http://localhost:5173
-npm run build      # production bundle in /dist
-npm run preview    # preview production build
-npm test           # run Vitest suite
-npm run coverage   # generate coverage report
+npm run dev
+```
+
+Then open the URL printed in the terminal.
+
+To run the tests:
+
+```bash
+npm test           # single run
+npm run test:watch # watch mode
+npm run coverage   # coverage report
 ```
 
 ## Firebase Setup (optional)
-1. Create a Firebase project → Web App.
-2. Enable **Authentication → Anonymous** and **Firestore**.
-3. Copy the config object and paste it into `index.html` replacing `YOUR_API_KEY`, `YOUR_AUTH_DOMAIN`, `YOUR_PROJECT_ID`.
-4. Deploy Firestore rules:
+
+The app runs in local-only mode while the Firebase config in `firebase.js` keeps its placeholder values. To enable cloud sync:
+
+1. Create a Firebase project and register a Web App.
+2. Enable **Authentication → Google** as a sign-in provider.
+3. Enable **Cloud Firestore**.
+4. Copy the web app config into `firebase.js`, replacing the placeholder values.
+5. Add Firestore security rules allowing each user to read and write only their own document:
+
    ```
    rules_version = '2';
    service cloud.firestore {
      match /databases/{database}/documents {
-       match /users/{uid}/{document=**} {
+       match /progress/{uid} {
          allow read, write: if request.auth != null && request.auth.uid == uid;
        }
      }
    }
    ```
-5. Redeploy — the app will now sync progress across devices.
+
+6. Redeploy. Progress is then stored per user and synced across devices.
 
 ## Project Structure
+
 ```
-├── index.html          # entry point, loads firebase config, registers SW
-├── app.js              # core logic (phrases, TTS, ASR, XP, Firebase sync)
-├── firebase.js         # lazy Firebase init + sync helpers
-├── app.test.js         # Vitest specs (jsdom)
-├── vite.config.js      # Vite + PWA config
+├── index.html        # layout, styles and UI structure
+├── app.js            # phrases, language switching, speech, XP and sync
+├── firebase.js       # optional Firebase init and cloud save/load
+├── app.test.js       # Vitest test suite (jsdom)
+├── test.html         # manual test harness
+├── vitest.config.js  # Vitest configuration
 ├── package.json
-└── public/             # manifest.json, icons, offline fallback
+└── package-lock.json
 ```
 
-## Testing
-```bash
-npm test           # watch mode
-npm run coverage   # HTML report in ./coverage
-```
-Tests mock `SpeechSynthesis`, `SpeechRecognition`, `localStorage`, and Firebase.
+## Data Model
 
-## PWA / Offline
-- `vite-plugin-pwa` generates a service worker with `workbox`.
-- `manifest.json` + icons in `public/` make it installable.
-- All assets cached on first visit; works fully offline.
+Each phrase carries its text for both target languages plus the Portuguese translation:
 
-## Deploy to GitHub Pages
-```yaml
-# .github/workflows/deploy.yml
-name: Deploy
-on:
-  push:
-    branches: [main]
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: npm ci && npm run build
-      - uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+```js
+{
+  level: "A1",
+  en: "Good morning",
+  de: "Guten Morgen",
+  pt: "Bom dia"
+}
 ```
-Enable **Settings → Pages → GitHub Actions** as source.
+
+## Browser Support
+
+Speech recognition relies on the Web Speech API and works best in **Chrome** and **Edge**. Text-to-speech works in all modern browsers. The app degrades gracefully when a speech API is unavailable.
 
 ## License
-MIT — free to use, modify, distribute.
+
+MIT
