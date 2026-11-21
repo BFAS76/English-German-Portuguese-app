@@ -1,4 +1,4 @@
-# English App
+# English -German App
 
 A single-page web app to practice **English (EN)** and **German (DE)** vocabulary and pronunciation, with translations in **Portuguese (PT)**.
 
