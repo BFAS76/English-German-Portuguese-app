@@ -22,8 +22,9 @@ npm run build        # Vite production build
 npm run preview      # preview the build
 ```
 
-CI (`.github/workflows/ci.yml`) runs `npm install` + `npm test` on every push to
-`main` and on every pull request.
+CI (`.github/workflows/ci.yml`) runs `npm ci` + `npm test` on Node 22, on every
+push to `main` and on every pull request. The test tooling (Vitest 5) requires
+Node 22 or newer.
 
 ## Running the app
 
@@ -98,6 +99,6 @@ Vitest with the `jsdom` environment (`vitest.config.js`).
 - The runtime Firebase version is the CDN build pinned in the `index.html`
   import map, **not** the npm `firebase` dependency (used only for tests/types).
   Keep them aligned.
-- `package-lock.json` is currently out of sync with `package.json`, so CI uses
-  `npm install` rather than `npm ci`. Regenerate the lock file (`npm install`,
-  then commit it) to restore reproducible `npm ci` installs.
+- The test tooling (Vitest 5 / Vite 8 / jsdom 31) needs **Node 22+**. On older
+  Node, `localStorage` is not wired into the jsdom environment and `app.test.js`
+  fails; CI pins Node 22 for this reason.

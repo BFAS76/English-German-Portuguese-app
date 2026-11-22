@@ -12,9 +12,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
-      # npm install (not npm ci): the committed lock file is out of sync with
-      # package.json and must be reconciled until it is regenerated locally.
-      - run: npm install
+      - run: npm ci
       - run: npm test

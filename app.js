@@ -210,11 +210,25 @@ export function initAudio() {
     if (!state.current.en) nextPhrase();
 }
 
+// Escolhe uma voz instalada que corresponda ao idioma (ex.: uma voz alemã para
+// de-DE), para o alemão não ser lido com sotaque inglês. Devolve null se não
+// houver correspondência — o browser usa então a voz por omissão do idioma.
+export function pickVoice(langCode) {
+    const voices = window.speechSynthesis?.getVoices?.() ?? [];
+    const code = langCode.toLowerCase();
+    const prefix = code.slice(0, 2);
+    return voices.find(v => v.lang?.toLowerCase() === code)
+        ?? voices.find(v => v.lang?.toLowerCase().startsWith(prefix))
+        ?? null;
+}
+
 export function playVoice() {
     if (!state.current.en) return;
     window.speechSynthesis.cancel();
     const msg = new SpeechSynthesisUtterance(state.current[state.language]);
     msg.lang = getLangCode();
+    const voice = pickVoice(msg.lang);
+    if (voice) msg.voice = voice;
     msg.rate = 0.8;
     window.speechSynthesis.speak(msg);
 }
