@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // -----------------------------------------------------------------------------
 // Mocks dos módulos Firebase (CDN/npm). Usamos factories para que os testes
@@ -49,6 +49,10 @@ beforeEach(() => {
     vi.clearAllMocks();
     mockGetAuth.mockReturnValue({ currentUser: null });
     mockGetFirestore.mockReturnValue({ _type: 'firestore' });
+});
+
+afterEach(() => {
+    vi.useRealTimers();
 });
 
 // -----------------------------------------------------------------------------
@@ -172,20 +176,53 @@ describe('com Firebase pronto', () => {
         expect(mockSignOut).toHaveBeenCalled();
     });
 
-    it('cloudSave grava no doc do utilizador com updatedAt', async () => {
+    it('cloudSave grava no doc do utilizador com updatedAt (após o debounce)', async () => {
+        vi.useFakeTimers();
         const fb = await readyModuleWithUser();
-        mockSetDoc.mockResolvedValueOnce();
-        await fb.cloudSave({ score: 30, language: 'de', level: 'B1' });
+        mockSetDoc.mockResolvedValue();
+        fb.cloudSave({ score: 30, language: 'de', level: 'B1' });
+        expect(mockSetDoc).not.toHaveBeenCalled(); // ainda em debounce
+        await vi.advanceTimersByTimeAsync(fb.SAVE_DEBOUNCE_MS);
         expect(mockDoc).toHaveBeenCalledWith(expect.anything(), 'progress', 'user-123');
         const payload = mockSetDoc.mock.calls[0][1];
         expect(payload).toMatchObject({ score: 30, language: 'de', level: 'B1' });
         expect(typeof payload.updatedAt).toBe('number');
+        vi.useRealTimers();
     });
 
-    it('cloudSave engole erros silenciosamente', async () => {
+    it('coalesce escritas rápidas numa só (debounce)', async () => {
+        vi.useFakeTimers();
         const fb = await readyModuleWithUser();
-        mockSetDoc.mockRejectedValueOnce(new Error('offline'));
-        await expect(fb.cloudSave({ score: 1 })).resolves.toBeUndefined();
+        mockSetDoc.mockResolvedValue();
+        fb.cloudSave({ score: 10 });
+        fb.cloudSave({ score: 20 });
+        fb.cloudSave({ score: 30 });
+        await vi.advanceTimersByTimeAsync(fb.SAVE_DEBOUNCE_MS);
+        expect(mockSetDoc).toHaveBeenCalledTimes(1);
+        expect(mockSetDoc.mock.calls[0][1]).toMatchObject({ score: 30 });
+        vi.useRealTimers();
+    });
+
+    it('flushCloudSave persiste imediatamente a escrita pendente', async () => {
+        vi.useFakeTimers();
+        const fb = await readyModuleWithUser();
+        mockSetDoc.mockResolvedValue();
+        fb.cloudSave({ score: 42 });
+        await fb.flushCloudSave();
+        expect(mockSetDoc).toHaveBeenCalledTimes(1);
+        expect(mockSetDoc.mock.calls[0][1]).toMatchObject({ score: 42 });
+        vi.useRealTimers();
+    });
+
+    it('cloudSave engole erros do Firestore silenciosamente', async () => {
+        vi.useFakeTimers();
+        const fb = await readyModuleWithUser();
+        mockSetDoc.mockRejectedValue(new Error('offline'));
+        fb.cloudSave({ score: 1 });
+        // Se o erro não fosse engolido, este await rejeitaria e o teste falhava.
+        await vi.advanceTimersByTimeAsync(fb.SAVE_DEBOUNCE_MS);
+        expect(mockSetDoc).toHaveBeenCalledTimes(1);
+        vi.useRealTimers();
     });
 
     it('cloudLoad devolve os dados quando o documento existe', async () => {

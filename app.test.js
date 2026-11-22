@@ -111,6 +111,14 @@ describe('checkMatch', () => {
         expect(checkMatch('Guten Morgen', 'Guten Morgen')).toBe(true);
         expect(checkMatch('guten morgen', 'Guten Morgen')).toBe(true);
     });
+
+    it('rejeita uma palavra curta que cobre pouco da frase alvo', () => {
+        expect(checkMatch('good', 'good morning')).toBe(false);
+    });
+
+    it('aceita quando o dito cobre a maior parte da frase', () => {
+        expect(checkMatch('thank you very', 'thank you very much')).toBe(true);
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -452,6 +460,24 @@ describe('startRecognition', () => {
         startRecognition();
         mockRecognition.onend();
         expect(document.getElementById('mic-btn').style.filter).toBe('none');
+    });
+
+    it('onerror mostra mensagem de permissão e repõe o botão do microfone', () => {
+        const mockRecognition = { lang: '', start: vi.fn(), onstart: null, onresult: null, onend: null, onerror: null };
+        vi.stubGlobal('SpeechRecognition', vi.fn().mockReturnValue(mockRecognition));
+        document.getElementById('mic-btn').style.filter = 'brightness(1.5)';
+        startRecognition();
+        mockRecognition.onerror({ error: 'not-allowed' });
+        expect(document.getElementById('status').innerText).toContain('Microphone');
+        expect(document.getElementById('mic-btn').style.filter).toBe('none');
+    });
+
+    it('onerror trata no-speech com uma mensagem própria', () => {
+        const mockRecognition = { lang: '', start: vi.fn(), onstart: null, onresult: null, onend: null, onerror: null };
+        vi.stubGlobal('SpeechRecognition', vi.fn().mockReturnValue(mockRecognition));
+        startRecognition();
+        mockRecognition.onerror({ error: 'no-speech' });
+        expect(document.getElementById('status').innerText).toContain("Didn't catch that");
     });
 });
 
