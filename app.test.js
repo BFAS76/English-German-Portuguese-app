@@ -9,9 +9,12 @@ import {
     updateLevelUI,
     switchLanguage,
     switchLevel,
+    switchCategory,
     library,
     LANGUAGES,
     LEVELS,
+    CATEGORIES,
+    ALL_CATEGORIES,
     cloud,
     state,
     resetState,
@@ -23,6 +26,9 @@ import {
     nextPhrase,
     handleRecognitionResult,
     startRecognition,
+    updateStatsUI,
+    recordProgress,
+    countCorrect,
 } from './app.js';
 
 const DOM_TEMPLATE = `
@@ -39,6 +45,10 @@ const DOM_TEMPLATE = `
     <button class="btn-level active" data-level="A1"></button>
     <button class="btn-level" data-level="A2"></button>
     <button class="btn-level" data-level="B1"></button>
+    <select id="cat-select"></select>
+    <div id="stats-total"></div>
+    <div id="stats-levels"></div>
+    <div id="stats-cats"></div>
 `;
 
 beforeEach(() => {
@@ -663,12 +673,12 @@ describe('saveProgress com cloud.save', () => {
         state.language = 'de';
         state.level = 'B1';
         saveProgress();
-        expect(cloud.save).toHaveBeenCalledWith({ score: 30, language: 'de', level: 'B1' });
+        expect(cloud.save).toHaveBeenCalledWith(expect.objectContaining({ score: 30, language: 'de', level: 'B1' }));
     });
 
     it('chama cloud.save mesmo com score zero', () => {
         saveProgress();
-        expect(cloud.save).toHaveBeenCalledWith({ score: 0, language: 'en', level: 'A1' });
+        expect(cloud.save).toHaveBeenCalledWith(expect.objectContaining({ score: 0, language: 'en', level: 'A1' }));
     });
 
     it('chama cloud.save após resposta correta', () => {
@@ -743,5 +753,174 @@ describe('loadFromCloud', () => {
         cloud.load.mockResolvedValueOnce({ score: 60, language: 'en', level: 'A1' });
         await loadFromCloud();
         expect(localStorage.getItem('englishAppScore')).toBe('60');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// pickNextPhrase — filtro por categoria
+// ---------------------------------------------------------------------------
+describe('pickNextPhrase (categoria)', () => {
+    it('filtra pela categoria indicada', () => {
+        for (let i = 0; i < 20; i++) {
+            expect(pickNextPhrase(library, null, null, 'Shopping').cat).toBe('Shopping');
+        }
+    });
+
+    it('combina filtro de nível e de categoria', () => {
+        for (let i = 0; i < 20; i++) {
+            const p = pickNextPhrase(library, null, 'A1', 'Weather');
+            expect(p.level).toBe('A1');
+            expect(p.cat).toBe('Weather');
+        }
+    });
+
+    it('ALL_CATEGORIES não filtra por categoria', () => {
+        const cats = new Set();
+        for (let i = 0; i < 60; i++) cats.add(pickNextPhrase(library, null, null, ALL_CATEGORIES).cat);
+        expect(cats.size).toBeGreaterThan(1);
+    });
+
+    it('devolve null quando a combinação nível+categoria não existe', () => {
+        expect(pickNextPhrase(library, null, 'C2', 'Shopping')).toBeNull();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// switchCategory
+// ---------------------------------------------------------------------------
+describe('switchCategory', () => {
+    it('muda o state.category', () => {
+        switchCategory('Shopping');
+        expect(state.category).toBe('Shopping');
+    });
+
+    it('carrega uma frase da categoria selecionada', () => {
+        switchCategory('Shopping');
+        expect(state.current.cat).toBe('Shopping');
+    });
+
+    it('ignora categoria inválida', () => {
+        switchCategory('DoesNotExist');
+        expect(state.category).toBe(ALL_CATEGORIES);
+    });
+
+    it('aceita ALL_CATEGORIES', () => {
+        switchCategory('Shopping');
+        switchCategory(ALL_CATEGORIES);
+        expect(state.category).toBe(ALL_CATEGORIES);
+    });
+
+    it('guarda a categoria no localStorage', () => {
+        switchCategory('Health');
+        expect(localStorage.getItem('englishAppCategory')).toBe('Health');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// estatísticas de progresso
+// ---------------------------------------------------------------------------
+describe('estatísticas', () => {
+    it('recordProgress incrementa por categoria e por nível', () => {
+        recordProgress({ level: 'A1', cat: 'Food', en: 'x' });
+        recordProgress({ level: 'A1', cat: 'Food', en: 'y' });
+        recordProgress({ level: 'B1', cat: 'Work', en: 'z' });
+        expect(state.stats.byCategory.Food).toBe(2);
+        expect(state.stats.byCategory.Work).toBe(1);
+        expect(state.stats.byLevel.A1).toBe(2);
+        expect(state.stats.byLevel.B1).toBe(1);
+    });
+
+    it('recordProgress ignora frases sem categoria/nível', () => {
+        recordProgress({});
+        recordProgress(null);
+        expect(countCorrect()).toBe(0);
+    });
+
+    it('countCorrect soma os acertos de todos os níveis', () => {
+        recordProgress({ level: 'A1', cat: 'Food', en: 'x' });
+        recordProgress({ level: 'A2', cat: 'Food', en: 'y' });
+        expect(countCorrect()).toBe(2);
+    });
+
+    it('handleRecognitionResult regista a frase correta nas stats', () => {
+        state.current = library.find(p => p.en === 'Nice to meet you');
+        vi.useFakeTimers();
+        handleRecognitionResult('Nice to meet you');
+        vi.useRealTimers();
+        expect(state.stats.byLevel.A1).toBe(1);
+        expect(state.stats.byCategory.Greetings).toBe(1);
+    });
+
+    it('updateStatsUI escreve os totais no DOM', () => {
+        recordProgress({ level: 'A1', cat: 'Food', en: 'x' });
+        updateStatsUI();
+        expect(document.getElementById('stats-total').innerText).toBe('1');
+        expect(document.getElementById('stats-levels').innerText).toContain('A1: 1');
+        expect(document.getElementById('stats-cats').innerText).toContain('Food: 1');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// persistência de categoria e estatísticas
+// ---------------------------------------------------------------------------
+describe('persistência de categoria e stats', () => {
+    it('guarda e restaura a categoria', () => {
+        state.category = 'Travel';
+        saveProgress();
+        resetState();
+        expect(state.category).toBe(ALL_CATEGORIES);
+        loadProgress();
+        expect(state.category).toBe('Travel');
+    });
+
+    it('guarda e restaura as estatísticas', () => {
+        recordProgress({ level: 'A2', cat: 'Health', en: 'x' });
+        saveProgress();
+        resetState();
+        loadProgress();
+        expect(state.stats.byCategory.Health).toBe(1);
+        expect(state.stats.byLevel.A2).toBe(1);
+    });
+
+    it('ignora estatísticas corrompidas no localStorage', () => {
+        localStorage.setItem('englishAppStats', 'not-json');
+        loadProgress();
+        expect(state.stats).toEqual({ byCategory: {}, byLevel: {} });
+    });
+
+    it('ignora categoria inválida no localStorage', () => {
+        localStorage.setItem('englishAppCategory', 'Bogus');
+        loadProgress();
+        expect(state.category).toBe(ALL_CATEGORIES);
+    });
+});
+
+describe('loadFromCloud (categoria e stats)', () => {
+    beforeEach(() => {
+        cloud.load = vi.fn().mockResolvedValue(null);
+    });
+    afterEach(() => {
+        cloud.load = null;
+    });
+
+    it('restaura a categoria vinda do Firebase', async () => {
+        cloud.load.mockResolvedValueOnce({ score: 0, category: 'Directions' });
+        await loadFromCloud();
+        expect(state.category).toBe('Directions');
+    });
+
+    it('ignora categoria inválida vinda do Firebase', async () => {
+        cloud.load.mockResolvedValueOnce({ score: 0, category: 'Bogus' });
+        await loadFromCloud();
+        expect(state.category).toBe(ALL_CATEGORIES);
+    });
+
+    it('funde as estatísticas mantendo o máximo por chave', async () => {
+        state.stats = { byCategory: { Food: 5 }, byLevel: { A1: 5 } };
+        cloud.load.mockResolvedValueOnce({ score: 0, stats: { byCategory: { Food: 2, Work: 3 }, byLevel: { A1: 8 } } });
+        await loadFromCloud();
+        expect(state.stats.byCategory.Food).toBe(5);
+        expect(state.stats.byCategory.Work).toBe(3);
+        expect(state.stats.byLevel.A1).toBe(8);
     });
 });

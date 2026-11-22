@@ -181,6 +181,12 @@ export const library = [
 
 export const LANGUAGES = ['en', 'de'];
 export const LEVELS = ['A1', 'A2', 'B1'];
+export const CATEGORIES = [...new Set(library.map(p => p.cat))].sort();
+export const ALL_CATEGORIES = 'All';
+
+function emptyStats() {
+    return { byCategory: {}, byLevel: {} };
+}
 
 export const state = {
     current: {},
@@ -188,6 +194,8 @@ export const state = {
     audioInitialized: false,
     language: 'en',
     level: 'A1',
+    category: ALL_CATEGORIES,
+    stats: emptyStats(),
 };
 
 export function resetState() {
@@ -196,6 +204,8 @@ export function resetState() {
     state.audioInitialized = false;
     state.language = 'en';
     state.level = 'A1';
+    state.category = ALL_CATEGORIES;
+    state.stats = emptyStats();
 }
 
 export function getLangCode() {
@@ -219,8 +229,11 @@ export function checkMatch(spoken, target) {
     return t.includes(s) && s.length >= t.length * MATCH_COVERAGE;
 }
 
-export function pickNextPhrase(lib, currentEn, level = null) {
-    const pool = level ? lib.filter(p => p.level === level) : lib;
+export function pickNextPhrase(lib, currentEn, level = null, category = null) {
+    let pool = level ? lib.filter(p => p.level === level) : lib;
+    if (category && category !== ALL_CATEGORIES) {
+        pool = pool.filter(p => p.cat === category);
+    }
     if (pool.length === 0) return null;
     if (pool.length === 1) return pool[0];
     let phrase;
@@ -242,9 +255,54 @@ export function updateLevelUI() {
     });
 }
 
+export function updateCategoryUI() {
+    const sel = document.getElementById('cat-select');
+    if (sel) sel.value = state.category;
+}
+
+export function updateStatsUI() {
+    const total = document.getElementById('stats-total');
+    if (total) total.innerText = String(countCorrect());
+
+    const levelEl = document.getElementById('stats-levels');
+    if (levelEl) {
+        levelEl.innerText = LEVELS
+            .map(l => `${l}: ${state.stats.byLevel[l] || 0}`)
+            .join('  ·  ');
+    }
+
+    const catEl = document.getElementById('stats-cats');
+    if (catEl) {
+        catEl.innerText = CATEGORIES
+            .map(c => `${c}: ${state.stats.byCategory[c] || 0}`)
+            .join('  ·  ');
+    }
+}
+
+// Total de respostas corretas registadas (soma por nível).
+export function countCorrect() {
+    return LEVELS.reduce((sum, l) => sum + (state.stats.byLevel[l] || 0), 0);
+}
+
+// Regista uma resposta correta nas estatísticas por categoria e por nível.
+export function recordProgress(phrase) {
+    if (!phrase?.cat || !phrase?.level) return;
+    const { byCategory, byLevel } = state.stats;
+    byCategory[phrase.cat] = (byCategory[phrase.cat] || 0) + 1;
+    byLevel[phrase.level] = (byLevel[phrase.level] || 0) + 1;
+    updateStatsUI();
+}
+
 export function nextPhrase() {
-    const phrase = pickNextPhrase(library, state.current.en, state.level);
-    if (!phrase) return;
+    const phrase = pickNextPhrase(library, state.current.en, state.level, state.category);
+    if (!phrase) {
+        const status = document.getElementById('status');
+        if (status) {
+            status.innerText = "No phrases for this level and category yet.";
+            status.style.color = "#fb7185";
+        }
+        return;
+    }
     state.current = phrase;
     document.getElementById('cat-display').innerText = `${state.current.cat} · ${state.current.level}`;
     const phraseEl = document.getElementById('phrase-display');
@@ -276,11 +334,27 @@ export function switchLevel(level) {
     nextPhrase();
 }
 
+export function switchCategory(category) {
+    if (category !== ALL_CATEGORIES && !CATEGORIES.includes(category)) return;
+    state.category = category;
+    updateCategoryUI();
+    saveProgress();
+    nextPhrase();
+}
+
 export function saveProgress() {
     localStorage.setItem('englishAppScore', String(state.score));
     localStorage.setItem('englishAppLanguage', state.language);
     localStorage.setItem('englishAppLevel', state.level);
-    cloud.save?.({ score: state.score, language: state.language, level: state.level });
+    localStorage.setItem('englishAppCategory', state.category);
+    localStorage.setItem('englishAppStats', JSON.stringify(state.stats));
+    cloud.save?.({
+        score: state.score,
+        language: state.language,
+        level: state.level,
+        category: state.category,
+        stats: state.stats,
+    });
 }
 
 export async function loadFromCloud() {
@@ -299,8 +373,18 @@ export async function loadFromCloud() {
         state.level = data.level;
         localStorage.setItem('englishAppLevel', state.level);
     }
+    if (data.category && (data.category === ALL_CATEGORIES || CATEGORIES.includes(data.category))) {
+        state.category = data.category;
+        localStorage.setItem('englishAppCategory', state.category);
+    }
+    if (data.stats) {
+        state.stats = mergeStats(state.stats, sanitizeStats(data.stats));
+        localStorage.setItem('englishAppStats', JSON.stringify(state.stats));
+    }
     updateLanguageUI();
     updateLevelUI();
+    updateCategoryUI();
+    updateStatsUI();
 }
 
 export function loadProgress() {
@@ -317,8 +401,43 @@ export function loadProgress() {
     const savedLevel = localStorage.getItem('englishAppLevel');
     if (savedLevel && LEVELS.includes(savedLevel)) state.level = savedLevel;
 
+    const savedCat = localStorage.getItem('englishAppCategory');
+    if (savedCat && (savedCat === ALL_CATEGORIES || CATEGORIES.includes(savedCat))) {
+        state.category = savedCat;
+    }
+
+    const savedStats = localStorage.getItem('englishAppStats');
+    if (savedStats) {
+        try { state.stats = sanitizeStats(JSON.parse(savedStats)); } catch (e) { /* ignora */ }
+    }
+
     updateLanguageUI();
     updateLevelUI();
+    updateCategoryUI();
+    updateStatsUI();
+}
+
+function sanitizeStats(obj) {
+    const s = emptyStats();
+    if (!obj || typeof obj !== 'object') return s;
+    for (const dim of ['byCategory', 'byLevel']) {
+        const src = obj[dim];
+        if (src && typeof src === 'object') {
+            for (const [k, v] of Object.entries(src)) {
+                if (typeof v === 'number' && Number.isFinite(v) && v >= 0) s[dim][k] = v;
+            }
+        }
+    }
+    return s;
+}
+
+function mergeStats(a, b) {
+    const out = emptyStats();
+    for (const dim of ['byCategory', 'byLevel']) {
+        const keys = new Set([...Object.keys(a[dim]), ...Object.keys(b[dim])]);
+        for (const k of keys) out[dim][k] = Math.max(a[dim][k] || 0, b[dim][k] || 0);
+    }
+    return out;
 }
 
 export function initAudio() {
@@ -361,6 +480,7 @@ export function handleRecognitionResult(transcript) {
         status.innerText = "✅ Excellent! +10 XP";
         status.style.color = "#4ade80";
         state.score += 10;
+        recordProgress(state.current);
         document.getElementById('points').innerText = String(state.score);
         saveProgress();
         setTimeout(nextPhrase, 2000);
