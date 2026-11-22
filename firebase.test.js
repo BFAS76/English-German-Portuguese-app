@@ -219,7 +219,9 @@ describe('com Firebase pronto', () => {
         const fb = await readyModuleWithUser();
         mockSetDoc.mockRejectedValue(new Error('offline'));
         fb.cloudSave({ score: 1 });
-        await expect(vi.advanceTimersByTimeAsync(fb.SAVE_DEBOUNCE_MS)).resolves.toBeUndefined();
+        // Se o erro não fosse engolido, este await rejeitaria e o teste falhava.
+        await vi.advanceTimersByTimeAsync(fb.SAVE_DEBOUNCE_MS);
+        expect(mockSetDoc).toHaveBeenCalledTimes(1);
         vi.useRealTimers();
     });
 
