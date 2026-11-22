@@ -44,7 +44,7 @@ const DOM_TEMPLATE = `
 beforeEach(() => {
     document.body.innerHTML = DOM_TEMPLATE;
     localStorage.clear();
-    vi.stubGlobal('SpeechSynthesisUtterance', vi.fn().mockImplementation((text) => ({ text })));
+    vi.stubGlobal('SpeechSynthesisUtterance', vi.fn(function (text) { this.text = text; }));
     vi.stubGlobal('speechSynthesis', { speak: vi.fn(), cancel: vi.fn() });
     resetState();
 });
@@ -316,7 +316,7 @@ describe('playVoice', () => {
     it('usa idioma en-US e velocidade 0.8 para inglês', () => {
         state.current = library[0];
         const utterance = { lang: '', rate: 0 };
-        vi.mocked(SpeechSynthesisUtterance).mockReturnValueOnce(utterance);
+        vi.mocked(SpeechSynthesisUtterance).mockImplementationOnce(function () { return utterance; });
         playVoice();
         expect(utterance.lang).toBe('en-US');
         expect(utterance.rate).toBe(0.8);
@@ -326,7 +326,7 @@ describe('playVoice', () => {
         state.current = library[0];
         state.language = 'de';
         const utterance = { lang: '', rate: 0 };
-        vi.mocked(SpeechSynthesisUtterance).mockReturnValueOnce(utterance);
+        vi.mocked(SpeechSynthesisUtterance).mockImplementationOnce(function () { return utterance; });
         playVoice();
         expect(utterance.lang).toBe('de-DE');
     });
@@ -336,6 +336,27 @@ describe('playVoice', () => {
         state.language = 'de';
         playVoice();
         expect(vi.mocked(SpeechSynthesisUtterance)).toHaveBeenCalledWith('Guten Morgen');
+    });
+
+    it('escolhe uma voz correspondente ao idioma quando disponível', () => {
+        const enVoice = { lang: 'en-US', name: 'English' };
+        const deVoice = { lang: 'de-DE', name: 'German' };
+        window.speechSynthesis.getVoices = vi.fn(() => [enVoice, deVoice]);
+        state.current = library.find(p => p.en === 'Good morning');
+        state.language = 'de';
+        const utterance = { lang: '', rate: 0, voice: null };
+        vi.mocked(SpeechSynthesisUtterance).mockImplementationOnce(function () { return utterance; });
+        playVoice();
+        expect(utterance.voice).toBe(deVoice);
+    });
+
+    it('não define voz quando nenhuma corresponde', () => {
+        window.speechSynthesis.getVoices = vi.fn(() => [{ lang: 'fr-FR', name: 'French' }]);
+        state.current = library.find(p => p.en === 'Good morning');
+        const utterance = { lang: '', rate: 0, voice: null };
+        vi.mocked(SpeechSynthesisUtterance).mockImplementationOnce(function () { return utterance; });
+        playVoice();
+        expect(utterance.voice).toBeNull();
     });
 });
 
@@ -420,8 +441,8 @@ describe('startRecognition', () => {
 
     it('usa webkitSpeechRecognition como fallback', () => {
         const mockStart = vi.fn();
-        const MockRecognition = vi.fn().mockReturnValue({
-            lang: '', start: mockStart, onstart: null, onresult: null, onend: null,
+        const MockRecognition = vi.fn(function () {
+            return { lang: '', start: mockStart, onstart: null, onresult: null, onend: null };
         });
         vi.stubGlobal('SpeechRecognition', undefined);
         vi.stubGlobal('webkitSpeechRecognition', MockRecognition);
@@ -432,7 +453,7 @@ describe('startRecognition', () => {
 
     it('define o idioma como en-US quando língua é EN', () => {
         const mockRecognition = { lang: '', start: vi.fn(), onstart: null, onresult: null, onend: null };
-        vi.stubGlobal('SpeechRecognition', vi.fn().mockReturnValue(mockRecognition));
+        vi.stubGlobal('SpeechRecognition', vi.fn(function () { return mockRecognition; }));
         startRecognition();
         expect(mockRecognition.lang).toBe('en-US');
     });
@@ -440,14 +461,14 @@ describe('startRecognition', () => {
     it('define o idioma como de-DE quando língua é DE', () => {
         state.language = 'de';
         const mockRecognition = { lang: '', start: vi.fn(), onstart: null, onresult: null, onend: null };
-        vi.stubGlobal('SpeechRecognition', vi.fn().mockReturnValue(mockRecognition));
+        vi.stubGlobal('SpeechRecognition', vi.fn(function () { return mockRecognition; }));
         startRecognition();
         expect(mockRecognition.lang).toBe('de-DE');
     });
 
     it('onstart atualiza o status para "Listening..."', () => {
         const mockRecognition = { lang: '', start: vi.fn(), onstart: null, onresult: null, onend: null };
-        vi.stubGlobal('SpeechRecognition', vi.fn().mockReturnValue(mockRecognition));
+        vi.stubGlobal('SpeechRecognition', vi.fn(function () { return mockRecognition; }));
         startRecognition();
         mockRecognition.onstart();
         expect(document.getElementById('status').innerText).toBe('Listening...');
@@ -455,7 +476,7 @@ describe('startRecognition', () => {
 
     it('onend restaura o filtro do botão do microfone', () => {
         const mockRecognition = { lang: '', start: vi.fn(), onstart: null, onresult: null, onend: null };
-        vi.stubGlobal('SpeechRecognition', vi.fn().mockReturnValue(mockRecognition));
+        vi.stubGlobal('SpeechRecognition', vi.fn(function () { return mockRecognition; }));
         document.getElementById('mic-btn').style.filter = 'brightness(1.5)';
         startRecognition();
         mockRecognition.onend();
@@ -464,7 +485,7 @@ describe('startRecognition', () => {
 
     it('onerror mostra mensagem de permissão e repõe o botão do microfone', () => {
         const mockRecognition = { lang: '', start: vi.fn(), onstart: null, onresult: null, onend: null, onerror: null };
-        vi.stubGlobal('SpeechRecognition', vi.fn().mockReturnValue(mockRecognition));
+        vi.stubGlobal('SpeechRecognition', vi.fn(function () { return mockRecognition; }));
         document.getElementById('mic-btn').style.filter = 'brightness(1.5)';
         startRecognition();
         mockRecognition.onerror({ error: 'not-allowed' });
@@ -474,7 +495,7 @@ describe('startRecognition', () => {
 
     it('onerror trata no-speech com uma mensagem própria', () => {
         const mockRecognition = { lang: '', start: vi.fn(), onstart: null, onresult: null, onend: null, onerror: null };
-        vi.stubGlobal('SpeechRecognition', vi.fn().mockReturnValue(mockRecognition));
+        vi.stubGlobal('SpeechRecognition', vi.fn(function () { return mockRecognition; }));
         startRecognition();
         mockRecognition.onerror({ error: 'no-speech' });
         expect(document.getElementById('status').innerText).toContain("Didn't catch that");
