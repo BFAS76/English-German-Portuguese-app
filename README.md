@@ -6,7 +6,7 @@ Plain HTML, CSS and JavaScript modules. No framework, no build step required to 
 
 ## Features
 
-- **33 phrases** across CEFR levels **A1, A2 and B1**
+- **50 phrases** across CEFR levels **A1, A2 and B1** (17 / 17 / 16)
 - Switch the target language between **English** and **German**
 - Portuguese translation shown alongside every phrase
 - **Text-to-speech** playback of the target phrase (Web Speech API)
@@ -21,7 +21,7 @@ Plain HTML, CSS and JavaScript modules. No framework, no build step required to 
 | --- | --- |
 | Markup and logic | Vanilla HTML + JavaScript modules |
 | Speech | `window.speechSynthesis`, `SpeechRecognition` / `webkitSpeechRecognition` |
-| Auth and sync (optional) | Firebase 12 (`firebase/app`, `firebase/auth`, `firebase/firestore`) |
+| Auth and sync (optional) | Firebase 10.14.0, loaded from the CDN via an import map in `index.html` |
 | Tests | Vitest with jsdom and v8 coverage |
 
 ## Getting Started
