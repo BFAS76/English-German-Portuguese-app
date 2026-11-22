@@ -55,6 +55,42 @@ afterEach(() => {
 });
 
 // ---------------------------------------------------------------------------
+// library (integridade dos dados)
+// ---------------------------------------------------------------------------
+describe('library', () => {
+    it('tem pelo menos 140 frases', () => {
+        expect(library.length).toBeGreaterThanOrEqual(140);
+    });
+
+    it('cada frase tem level válido e en/de/pt/cat não vazios', () => {
+        for (const p of library) {
+            expect(LEVELS).toContain(p.level);
+            for (const field of ['cat', 'en', 'de', 'pt']) {
+                expect(typeof p[field]).toBe('string');
+                expect(p[field].trim().length).toBeGreaterThan(0);
+            }
+        }
+    });
+
+    it('não tem frases em inglês duplicadas', () => {
+        const seen = new Set();
+        const dups = [];
+        for (const p of library) {
+            if (seen.has(p.en)) dups.push(p.en);
+            seen.add(p.en);
+        }
+        expect(dups).toEqual([]);
+    });
+
+    it('inclui as categorias novas', () => {
+        const cats = new Set(library.map(p => p.cat));
+        for (const c of ['Shopping', 'Health', 'Directions', 'Weather', 'Time']) {
+            expect(cats.has(c)).toBe(true);
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
 // normalizeText
 // ---------------------------------------------------------------------------
 describe('normalizeText', () => {
