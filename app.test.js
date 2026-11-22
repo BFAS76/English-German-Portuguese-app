@@ -8,8 +8,11 @@ import {
     updateLanguageUI,
     updateLevelUI,
     switchLanguage,
+    switchBase,
     switchLevel,
     switchCategory,
+    updateBaseUI,
+    renderPhrase,
     library,
     LANGUAGES,
     LEVELS,
@@ -42,6 +45,10 @@ const DOM_TEMPLATE = `
     <div id="status"></div>
     <button class="btn-lang active" data-lang="en"></button>
     <button class="btn-lang" data-lang="de"></button>
+    <button class="btn-lang" data-lang="pt"></button>
+    <button class="btn-base" data-base="en"></button>
+    <button class="btn-base" data-base="de"></button>
+    <button class="btn-base active" data-base="pt"></button>
     <button class="btn-level active" data-level="A1"></button>
     <button class="btn-level" data-level="A2"></button>
     <button class="btn-level" data-level="B1"></button>
@@ -234,6 +241,16 @@ describe('getLangCode', () => {
     it('devolve de-DE para alemão', () => {
         state.language = 'de';
         expect(getLangCode()).toBe('de-DE');
+    });
+
+    it('devolve pt-PT para português', () => {
+        state.language = 'pt';
+        expect(getLangCode()).toBe('pt-PT');
+    });
+
+    it('aceita uma língua explícita como argumento', () => {
+        expect(getLangCode('pt')).toBe('pt-PT');
+        expect(getLangCode('de')).toBe('de-DE');
     });
 });
 
@@ -922,5 +939,99 @@ describe('loadFromCloud (categoria e stats)', () => {
         expect(state.stats.byCategory.Food).toBe(5);
         expect(state.stats.byCategory.Work).toBe(3);
         expect(state.stats.byLevel.A1).toBe(8);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// língua base (dica) vs língua-alvo (aprender)
+// ---------------------------------------------------------------------------
+describe('língua base e alvo', () => {
+    beforeEach(() => {
+        state.current = library.find(p => p.en === 'Good morning');
+    });
+
+    it('por omissão fala pt e aprende en', () => {
+        expect(state.base).toBe('pt');
+        expect(state.language).toBe('en');
+    });
+
+    it('renderPhrase mostra o alvo na frase e a base na dica', () => {
+        state.language = 'de';
+        state.base = 'pt';
+        renderPhrase();
+        expect(document.getElementById('phrase-display').innerText).toBe('Guten Morgen');
+        expect(document.getElementById('translation-display').innerText).toBe('Bom dia');
+    });
+
+    it('a dica aparece em inglês quando a base é en', () => {
+        state.base = 'en';
+        state.language = 'de';
+        renderPhrase();
+        expect(document.getElementById('translation-display').innerText).toBe('Good morning');
+    });
+
+    it('switchBase muda a língua base', () => {
+        switchBase('en');
+        expect(state.base).toBe('en');
+    });
+
+    it('switchBase ignora língua inválida', () => {
+        switchBase('fr');
+        expect(state.base).toBe('pt');
+    });
+
+    it('escolher como base a língua que se aprende troca as duas', () => {
+        // base=pt, alvo=en -> escolher base=en deve trocar o alvo para pt
+        switchBase('en');
+        expect(state.base).toBe('en');
+        expect(state.language).toBe('pt');
+    });
+
+    it('escolher como alvo a língua base troca as duas', () => {
+        // base=pt, alvo=en -> aprender pt deve trocar a base para en
+        switchLanguage('pt');
+        expect(state.language).toBe('pt');
+        expect(state.base).toBe('en');
+    });
+
+    it('aprender português é possível (alvo pt, dica na base)', () => {
+        switchBase('en');          // falo inglês...
+        switchLanguage('pt');      // ...aprendo português
+        expect(state.language).toBe('pt');
+        expect(state.base).toBe('en');
+        renderPhrase();
+        expect(document.getElementById('phrase-display').innerText).toBe('Bom dia');
+        expect(document.getElementById('translation-display').innerText).toBe('Good morning');
+    });
+
+    it('switchBase marca o botão base correto como active', () => {
+        switchBase('de');
+        expect(document.querySelector('[data-base="de"]').classList.contains('active')).toBe(true);
+        expect(document.querySelector('[data-base="pt"]').classList.contains('active')).toBe(false);
+    });
+
+    it('guarda e restaura a língua base', () => {
+        state.base = 'de';
+        state.language = 'en';
+        saveProgress();
+        resetState();
+        expect(state.base).toBe('pt');
+        loadProgress();
+        expect(state.base).toBe('de');
+    });
+
+    it('nunca deixa a base igual ao alvo ao carregar', () => {
+        localStorage.setItem('englishAppLanguage', 'de');
+        localStorage.setItem('englishAppBase', 'de');
+        loadProgress();
+        expect(state.language).toBe('de');
+        expect(state.base).not.toBe('de');
+    });
+
+    it('restaura a base vinda do Firebase', async () => {
+        cloud.load = vi.fn().mockResolvedValueOnce({ score: 0, base: 'en', language: 'de' });
+        await loadFromCloud();
+        expect(state.base).toBe('en');
+        cloud.load = null;
     });
 });

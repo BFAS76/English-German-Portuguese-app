@@ -179,10 +179,12 @@ export const library = [
     { level: "B1", cat: "Time",      en: "It is almost midnight",              de: "Es ist fast Mitternacht",                   pt: "É quase meia-noite" },
 ];
 
-export const LANGUAGES = ['en', 'de'];
+export const LANGUAGES = ['en', 'de', 'pt'];
 export const LEVELS = ['A1', 'A2', 'B1'];
 export const CATEGORIES = [...new Set(library.map(p => p.cat))].sort();
 export const ALL_CATEGORIES = 'All';
+
+const LANG_CODES = { en: 'en-US', de: 'de-DE', pt: 'pt-PT' };
 
 function emptyStats() {
     return { byCategory: {}, byLevel: {} };
@@ -192,7 +194,8 @@ export const state = {
     current: {},
     score: 0,
     audioInitialized: false,
-    language: 'en',
+    base: 'pt',        // a língua que o utilizador já sabe (a dica/tradução)
+    language: 'en',    // a língua que está a aprender (o alvo)
     level: 'A1',
     category: ALL_CATEGORIES,
     stats: emptyStats(),
@@ -202,14 +205,15 @@ export function resetState() {
     state.current = {};
     state.score = 0;
     state.audioInitialized = false;
+    state.base = 'pt';
     state.language = 'en';
     state.level = 'A1';
     state.category = ALL_CATEGORIES;
     state.stats = emptyStats();
 }
 
-export function getLangCode() {
-    return state.language === 'de' ? 'de-DE' : 'en-US';
+export function getLangCode(lang = state.language) {
+    return LANG_CODES[lang] || 'en-US';
 }
 
 export function normalizeText(text) {
@@ -247,6 +251,27 @@ export function updateLanguageUI() {
     document.querySelectorAll('[data-lang]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.lang === state.language);
     });
+}
+
+export function updateBaseUI() {
+    document.querySelectorAll('[data-base]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.base === state.base);
+    });
+}
+
+// Mostra a frase atual na língua-alvo e a dica na língua base.
+export function renderPhrase() {
+    if (!state.current.en) return;
+    const phraseEl = document.getElementById('phrase-display');
+    if (phraseEl) {
+        phraseEl.innerText = state.current[state.language];
+        phraseEl.lang = getLangCode(state.language);
+    }
+    const transEl = document.getElementById('translation-display');
+    if (transEl) {
+        transEl.innerText = state.current[state.base];
+        transEl.lang = getLangCode(state.base);
+    }
 }
 
 export function updateLevelUI() {
@@ -305,24 +330,31 @@ export function nextPhrase() {
     }
     state.current = phrase;
     document.getElementById('cat-display').innerText = `${state.current.cat} · ${state.current.level}`;
-    const phraseEl = document.getElementById('phrase-display');
-    phraseEl.innerText = state.current[state.language];
-    phraseEl.lang = getLangCode();
-    document.getElementById('translation-display').innerText = state.current.pt;
+    renderPhrase();
     const status = document.getElementById('status');
     status.innerText = "Listen and Repeat!";
     status.style.color = "#94a3b8";
 }
 
+// A língua-alvo (a que se aprende). Se colidir com a base, troca-as.
 export function switchLanguage(lang) {
     if (!LANGUAGES.includes(lang)) return;
+    if (lang === state.base) state.base = state.language;
     state.language = lang;
-    if (state.current[lang]) {
-        const phraseEl = document.getElementById('phrase-display');
-        phraseEl.innerText = state.current[lang];
-        phraseEl.lang = getLangCode();
-    }
+    renderPhrase();
     updateLanguageUI();
+    updateBaseUI();
+    saveProgress();
+}
+
+// A língua base (a que já se sabe; aparece como dica). Se colidir com o alvo, troca-as.
+export function switchBase(base) {
+    if (!LANGUAGES.includes(base)) return;
+    if (base === state.language) state.language = state.base;
+    state.base = base;
+    renderPhrase();
+    updateLanguageUI();
+    updateBaseUI();
     saveProgress();
 }
 
@@ -345,16 +377,25 @@ export function switchCategory(category) {
 export function saveProgress() {
     localStorage.setItem('englishAppScore', String(state.score));
     localStorage.setItem('englishAppLanguage', state.language);
+    localStorage.setItem('englishAppBase', state.base);
     localStorage.setItem('englishAppLevel', state.level);
     localStorage.setItem('englishAppCategory', state.category);
     localStorage.setItem('englishAppStats', JSON.stringify(state.stats));
     cloud.save?.({
         score: state.score,
         language: state.language,
+        base: state.base,
         level: state.level,
         category: state.category,
         stats: state.stats,
     });
+}
+
+// A base e o alvo nunca podem ser a mesma língua.
+function ensureDistinctLangs() {
+    if (state.base === state.language) {
+        state.base = state.language === 'pt' ? 'en' : 'pt';
+    }
 }
 
 export async function loadFromCloud() {
@@ -369,6 +410,11 @@ export async function loadFromCloud() {
         state.language = data.language;
         localStorage.setItem('englishAppLanguage', state.language);
     }
+    if (data.base && LANGUAGES.includes(data.base)) {
+        state.base = data.base;
+        localStorage.setItem('englishAppBase', state.base);
+    }
+    ensureDistinctLangs();
     if (data.level && LEVELS.includes(data.level)) {
         state.level = data.level;
         localStorage.setItem('englishAppLevel', state.level);
@@ -382,6 +428,7 @@ export async function loadFromCloud() {
         localStorage.setItem('englishAppStats', JSON.stringify(state.stats));
     }
     updateLanguageUI();
+    updateBaseUI();
     updateLevelUI();
     updateCategoryUI();
     updateStatsUI();
@@ -398,6 +445,10 @@ export function loadProgress() {
     const savedLang = localStorage.getItem('englishAppLanguage');
     if (savedLang && LANGUAGES.includes(savedLang)) state.language = savedLang;
 
+    const savedBase = localStorage.getItem('englishAppBase');
+    if (savedBase && LANGUAGES.includes(savedBase)) state.base = savedBase;
+    ensureDistinctLangs();
+
     const savedLevel = localStorage.getItem('englishAppLevel');
     if (savedLevel && LEVELS.includes(savedLevel)) state.level = savedLevel;
 
@@ -412,6 +463,7 @@ export function loadProgress() {
     }
 
     updateLanguageUI();
+    updateBaseUI();
     updateLevelUI();
     updateCategoryUI();
     updateStatsUI();

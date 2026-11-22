@@ -10,8 +10,8 @@ Plain HTML, CSS and JavaScript modules. No framework, no build step required to 
 - **12 categories**: Greetings, Useful, Travel, Food, Numbers, Daily, Work, Shopping, Health, Directions, Weather and Time
 - **Category filter** to practise one category at a time (or all)
 - **Progress stats** of correct answers, broken down by level and by category
-- Switch the target language between **English** and **German**
-- Portuguese translation shown alongside every phrase
+- **Learn any of the three languages**: pick the language you speak (the hint) and the one you are learning — English, German **or** Portuguese, in any combination
+- The phrase is shown in the language you are learning, with a hint in the language you already speak
 - **Text-to-speech** playback of the target phrase (Web Speech API)
 - **Speech recognition** to check pronunciation (Web Speech API)
 - **XP and level progression** persisted in `localStorage`
