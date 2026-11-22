@@ -1,6 +1,6 @@
 // Service worker: caches the app shell so the app installs and works offline.
 // Bump CACHE when the shell changes to invalidate the old cache.
-const CACHE = 'engde-v1';
+const CACHE = 'engdept-v2';
 const ASSETS = [
     '.',
     'index.html',

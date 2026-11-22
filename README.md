@@ -1,6 +1,6 @@
-# English-German App
+# English-German-Portuguese App
 
-A single-page web app to practise **English** and **German** vocabulary and pronunciation, with every phrase translated into **Portuguese**.
+A single-page web app to practise **English**, **German** and **Portuguese** vocabulary and pronunciation. Learn any of the three languages, with a hint in a language you already know.
 
 Plain HTML, CSS and JavaScript modules. No framework, no build step required to run.
 

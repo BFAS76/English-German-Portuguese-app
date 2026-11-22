@@ -1,7 +1,7 @@
 {
-  "name": "English-German App",
-  "short_name": "EN · DE",
-  "description": "Practise English and German vocabulary and pronunciation, with Portuguese translations.",
+  "name": "English-German-Portuguese App",
+  "short_name": "EN·DE·PT",
+  "description": "Practise English, German and Portuguese vocabulary and pronunciation — learn any of the three.",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
