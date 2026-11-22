@@ -5,9 +5,10 @@ code in this repository.
 
 ## Overview
 
-A single-page web app to practise **English** and **German** vocabulary and
-pronunciation, with every phrase translated into **Portuguese**. Plain HTML, CSS
-and JavaScript modules — no framework. The app runs with no build step; the
+A single-page web app to practise **English**, **German** and **Portuguese**
+vocabulary and pronunciation — the learner picks a base language (shown as a
+hint) and a target language, any of the three. Plain HTML, CSS and JavaScript
+modules — no framework. The app runs with no build step; the
 tooling (Vite, Vitest) exists only for local dev-serving and tests.
 
 ## Commands
