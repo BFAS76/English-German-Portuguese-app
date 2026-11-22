@@ -42,7 +42,7 @@ export const library = [
 
     // B1 — Intermédio
     { level: "B1", cat: "Daily",    en: "I need to check my emails",    de: "Ich muss meine E-Mails checken",       pt: "Preciso de ver os meus e-mails" },
-    { level: "B1", cat: "Daily",    en: "What do you do for a living?", de: "Was machen Sie beruflich?",            pt: "O que fazes da vida?" },
+    { level: "B1", cat: "Daily",    en: "What do you do for a living?", de: "Was machen Sie beruflich?",            pt: "O que faz da vida?" },
     { level: "B1", cat: "Daily",    en: "Let's grab a coffee later",    de: "Lass uns später einen Kaffee trinken", pt: "Vamos tomar um café mais tarde" },
     { level: "B1", cat: "Useful",   en: "I don't understand what you mean", de: "Ich verstehe nicht, was Sie meinen", pt: "Não entendo o que quer dizer" },
     { level: "B1", cat: "Useful",   en: "How do you say this in German?", de: "Wie sagt man das auf Deutsch?",     pt: "Como se diz isto em alemão?" },
