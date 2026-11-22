@@ -70,12 +70,22 @@ The app runs in local-only mode while the Firebase config in `firebase.js` keeps
 ├── index.html        # layout, styles and UI structure
 ├── app.js            # phrases, language switching, speech, XP and sync
 ├── firebase.js       # optional Firebase init and cloud save/load
-├── app.test.js       # Vitest test suite (jsdom)
-├── test.html         # manual test harness
+├── app.test.js       # Vitest test suite for app.js (jsdom)
+├── firebase.test.js  # Vitest test suite for firebase.js (mocked)
 ├── vitest.config.js  # Vitest configuration
+├── .github/workflows/ci.yml  # CI: runs the tests on push and PR
+├── LICENSE
 ├── package.json
 └── package-lock.json
 ```
+
+## Language Notes
+
+The phrase set deliberately mixes formal (*Sie*) and informal (*du*) German
+registers, matching how each phrase is most naturally said (e.g. a polite
+request uses *Sie*, while "Let's grab a coffee" uses *du*). Portuguese
+translations use the European Portuguese variant, with `(a)` endings where the
+adjective would otherwise assume the speaker's gender.
 
 ## Data Model
 

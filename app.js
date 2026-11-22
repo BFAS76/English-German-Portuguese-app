@@ -19,18 +19,18 @@ export const library = [
     { level: "A1", cat: "Useful",   en: "I don't speak German",          de: "Ich spreche kein Deutsch",             pt: "Não falo alemão" },
     { level: "A1", cat: "Useful",   en: "Please repeat that",            de: "Bitte wiederholen Sie das",            pt: "Por favor, repita isso" },
     { level: "A1", cat: "Work",     en: "I work in an office",           de: "Ich arbeite in einem Büro",            pt: "Trabalho num escritório" },
-    { level: "A1", cat: "Daily",    en: "I am tired",                    de: "Ich bin müde",                         pt: "Estou cansado" },
+    { level: "A1", cat: "Daily",    en: "I am tired",                    de: "Ich bin müde",                         pt: "Estou cansado(a)" },
 
     // A2 — Elementar
     { level: "A2", cat: "Greetings", en: "How is it going?",            de: "Wie läuft es?",                        pt: "Como estão as coisas?" },
     { level: "A2", cat: "Greetings", en: "Have a wonderful day",        de: "Haben Sie einen wunderschönen Tag",    pt: "Tenha um dia maravilhoso" },
     { level: "A2", cat: "Travel",   en: "Where can I find a taxi?",     de: "Wo finde ich ein Taxi?",               pt: "Onde posso encontrar um táxi?" },
-    { level: "A2", cat: "Travel",   en: "I am lost, can you help me?",  de: "Ich habe mich verirrt, können Sie mir helfen?", pt: "Estou perdido, pode ajudar-me?" },
+    { level: "A2", cat: "Travel",   en: "I am lost, can you help me?",  de: "Ich habe mich verirrt, können Sie mir helfen?", pt: "Estou perdido(a), pode ajudar-me?" },
     { level: "A2", cat: "Travel",   en: "A table for two, please",      de: "Einen Tisch für zwei, bitte",          pt: "Uma mesa para dois, por favor" },
     { level: "A2", cat: "Useful",   en: "Could you speak slower, please?", de: "Könnten Sie bitte langsamer sprechen?", pt: "Poderia falar mais devagar, por favor?" },
     { level: "A2", cat: "Daily",    en: "What time does it open?",      de: "Wann öffnet es?",                      pt: "A que horas abre?" },
     { level: "A2", cat: "Daily",    en: "I would like a coffee, please", de: "Ich hätte gerne einen Kaffee, bitte", pt: "Queria um café, por favor" },
-    { level: "A2", cat: "Food",     en: "I am allergic to nuts",        de: "Ich bin allergisch gegen Nüsse",       pt: "Sou alérgico a frutos secos" },
+    { level: "A2", cat: "Food",     en: "I am allergic to nuts",        de: "Ich bin allergisch gegen Nüsse",       pt: "Sou alérgico(a) a frutos secos" },
     { level: "A2", cat: "Food",     en: "Could I have the menu?",       de: "Könnte ich die Speisekarte haben?",    pt: "Pode trazer-me a ementa?" },
     { level: "A2", cat: "Food",     en: "This is delicious",            de: "Das schmeckt köstlich",                pt: "Isto está delicioso" },
     { level: "A2", cat: "Numbers",  en: "It costs twenty euros",        de: "Es kostet zwanzig Euro",               pt: "Custa vinte euros" },
@@ -87,10 +87,17 @@ export function normalizeText(text) {
     return text.toLowerCase().replace(/[?.!,]/g, "").trim();
 }
 
+// Aceita correspondência exata ou parcial, mas exige que o que foi dito
+// cubra pelo menos 60% do comprimento da frase alvo — assim dizer apenas
+// uma palavra curta ("good") não valida uma frase inteira ("good morning").
+export const MATCH_COVERAGE = 0.6;
+
 export function checkMatch(spoken, target) {
     const s = normalizeText(spoken);
     const t = normalizeText(target);
-    return s === t || (t.includes(s) && s.length > 3);
+    if (s === t) return true;
+    if (s.length <= 3) return false;
+    return t.includes(s) && s.length >= t.length * MATCH_COVERAGE;
 }
 
 export function pickNextPhrase(lib, currentEn, level = null) {
@@ -121,7 +128,9 @@ export function nextPhrase() {
     if (!phrase) return;
     state.current = phrase;
     document.getElementById('cat-display').innerText = `${state.current.cat} · ${state.current.level}`;
-    document.getElementById('phrase-display').innerText = state.current[state.language];
+    const phraseEl = document.getElementById('phrase-display');
+    phraseEl.innerText = state.current[state.language];
+    phraseEl.lang = getLangCode();
     document.getElementById('translation-display').innerText = state.current.pt;
     const status = document.getElementById('status');
     status.innerText = "Listen and Repeat!";
@@ -132,7 +141,9 @@ export function switchLanguage(lang) {
     if (!LANGUAGES.includes(lang)) return;
     state.language = lang;
     if (state.current[lang]) {
-        document.getElementById('phrase-display').innerText = state.current[lang];
+        const phraseEl = document.getElementById('phrase-display');
+        phraseEl.innerText = state.current[lang];
+        phraseEl.lang = getLangCode();
     }
     updateLanguageUI();
     saveProgress();
@@ -244,6 +255,18 @@ export function startRecognition() {
 
     recognition.onresult = (event) => {
         handleRecognitionResult(event.results[0][0].transcript);
+    };
+
+    recognition.onerror = (event) => {
+        const status = document.getElementById('status');
+        const reason = event?.error === 'not-allowed'
+            ? "Microphone blocked — allow access and try again."
+            : event?.error === 'no-speech'
+                ? "Didn't catch that — try again."
+                : "Speech recognition error — try again.";
+        status.innerText = reason;
+        status.style.color = "#fb7185";
+        document.getElementById('mic-btn').style.filter = "none";
     };
 
     recognition.onend = () => {
