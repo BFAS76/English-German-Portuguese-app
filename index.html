@@ -13,9 +13,9 @@
     <script type="importmap">
     {
         "imports": {
-            "firebase/app":       "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js",
-            "firebase/auth":      "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js",
-            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js"
+            "firebase/app":       "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js",
+            "firebase/auth":      "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js",
+            "firebase/firestore": "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js"
         }
     }
     </script>
@@ -86,7 +86,7 @@
 </div>
 
 <script type="module">
-    import { initAudio, playVoice, startRecognition, nextPhrase, switchLanguage, switchLevel, loadFromCloud, cloud } from './app.js';
+    import { initAudio, playVoice, startRecognition, nextPhrase, switchLanguage, switchLevel, loadProgress, loadFromCloud, cloud } from './app.js';
     import { initFirebase, onAuthChange, signIn, signOutUser, getCurrentUser, cloudSave, cloudLoad } from './firebase.js';
 
     // ----------------------------------------------------------------
@@ -107,6 +107,10 @@
     // Liga as funções cloud ao app.js (só após Firebase estar pronto)
     cloud.save = cloudSave;
     cloud.load = cloudLoad;
+
+    // Carrega o progresso local ANTES de qualquer lógica de cloud, para que
+    // loadFromCloud compare contra o score real e não sobrescreva o localStorage.
+    loadProgress();
 
     onAuthChange(async (user) => {
         const btn = document.getElementById('auth-btn');
