@@ -16,7 +16,8 @@ Plain HTML, CSS and JavaScript modules. No framework, no build step required to 
 - **Speech recognition** to check pronunciation (Web Speech API)
 - **XP and level progression** persisted in `localStorage`
 - **Optional cloud sync** of progress via Google sign-in (Firebase Auth + Firestore)
-- Works fully offline in local-only mode, without any Firebase configuration
+- **Installable PWA** — add it to your home screen and use it offline (service worker + web manifest)
+- Works fully offline in local-only mode, without any Firebase configuration (the Firebase SDK is loaded lazily, only when a real config is present)
 
 ## Tech Stack
 
@@ -72,7 +73,11 @@ The app runs in local-only mode while the Firebase config in `firebase.js` keeps
 ```
 ├── index.html        # layout, styles and UI structure
 ├── app.js            # phrases, language switching, speech, XP and sync
-├── firebase.js       # optional Firebase init and cloud save/load
+├── firebase.js       # optional Firebase init and cloud save/load (lazy-loaded)
+├── manifest.webmanifest  # PWA manifest (installable app)
+├── sw.js             # service worker (offline app shell cache)
+├── icon-192.png      # PWA icon
+├── icon-512.png      # PWA icon (maskable)
 ├── app.test.js       # Vitest test suite for app.js (jsdom)
 ├── firebase.test.js  # Vitest test suite for firebase.js (mocked)
 ├── vitest.config.js  # Vitest configuration

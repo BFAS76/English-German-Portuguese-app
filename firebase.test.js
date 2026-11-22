@@ -76,7 +76,7 @@ describe('initFirebase', () => {
 
     it('inicializa auth e firestore com uma config válida', async () => {
         const fb = await freshModule();
-        fb.initFirebase(VALID_CONFIG);
+        await fb.initFirebase(VALID_CONFIG);
         expect(mockInitializeApp).toHaveBeenCalledWith(VALID_CONFIG);
         expect(mockGetAuth).toHaveBeenCalled();
         expect(mockGetFirestore).toHaveBeenCalled();
@@ -87,7 +87,7 @@ describe('initFirebase', () => {
         const fb = await freshModule();
         mockInitializeApp.mockImplementationOnce(() => { throw new Error('boom'); });
         const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        expect(() => fb.initFirebase(VALID_CONFIG)).not.toThrow();
+        await expect(fb.initFirebase(VALID_CONFIG)).resolves.toBeUndefined();
         expect(fb.isReady()).toBe(false);
         warn.mockRestore();
     });
@@ -144,7 +144,7 @@ describe('com Firebase pronto', () => {
     async function readyModuleWithUser() {
         mockGetAuth.mockReturnValue({ currentUser: USER });
         const fb = await freshModule();
-        fb.initFirebase(VALID_CONFIG);
+        await fb.initFirebase(VALID_CONFIG);
         return fb;
     }
 

@@ -7,6 +7,10 @@
 
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎙️</text></svg>">
 
     <!-- Mapeia bare specifiers npm para CDN — necessário para GitHub Pages -->
@@ -159,15 +163,17 @@
         appId:             'YOUR_APP_ID',
     };
 
-    initFirebase(FIREBASE_CONFIG);
-
-    // Liga as funções cloud ao app.js (só após Firebase estar pronto)
+    // Liga as funções cloud ao app.js.
     cloud.save = cloudSave;
     cloud.load = cloudLoad;
 
-    // Carrega o progresso local ANTES de qualquer lógica de cloud, para que
-    // loadFromCloud compare contra o score real e não sobrescreva o localStorage.
+    // Carrega o progresso local primeiro — não depende do Firebase e garante
+    // que a app funciona offline mesmo sem o SDK carregado.
     loadProgress();
+
+    // initFirebase é assíncrono: só carrega o SDK (do CDN) se houver config real.
+    // Em modo local, nada é obtido da rede, por isso a app arranca offline.
+    await initFirebase(FIREBASE_CONFIG);
 
     onAuthChange(async (user) => {
         const btn = document.getElementById('auth-btn');
@@ -201,6 +207,13 @@
     document.querySelectorAll('[data-level]').forEach(btn => {
         btn.addEventListener('click', () => switchLevel(btn.dataset.level));
     });
+
+    // Service worker: torna a app instalável e disponível offline (PWA).
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        });
+    }
 </script>
 </body>
 </html>

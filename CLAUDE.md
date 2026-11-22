@@ -46,7 +46,14 @@ Three source files, each with one responsibility:
   `cloud.save` / `cloud.load` only if `index.html` has wired them.
 - **`firebase.js`** — optional Google sign-in (Firebase Auth) and per-user
   progress sync (Firestore). Inert until a real config is supplied; stays in
-  local-only mode while `apiKey` is the `YOUR_API_KEY` placeholder.
+  local-only mode while `apiKey` is the `YOUR_API_KEY` placeholder. The Firebase
+  SDK is **lazy-loaded** (dynamic `import()` inside `initFirebase`), so in
+  local-only mode nothing is fetched from the CDN and the app works offline.
+
+**PWA** — `manifest.webmanifest` + `sw.js` make the app installable and offline.
+The service worker caches the app shell (cache-first for same-origin assets,
+network for cross-origin like the Firebase CDN); bump the `CACHE` constant in
+`sw.js` when the shell changes. `index.html` registers the worker on load.
 
 **Data model** — each phrase carries both target languages plus the Portuguese
 translation:

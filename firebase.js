@@ -1,23 +1,37 @@
-import { initializeApp } from 'firebase/app';
-import {
-    getAuth,
-    signInWithPopup,
-    GoogleAuthProvider,
-    signOut as fbSignOut,
-    onAuthStateChanged,
-} from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+// O SDK do Firebase é carregado preguiçosamente (dynamic import) apenas quando
+// há uma configuração real. Em modo local (placeholder) o SDK nunca é obtido do
+// CDN, por isso a app arranca mais depressa e funciona offline (PWA).
 
 let auth = null;
 let db = null;
-const provider = new GoogleAuthProvider();
+let provider = null;
 
-export function initFirebase(config) {
+// Referências para as funções do SDK, preenchidas após o carregamento.
+let _signInWithPopup = null;
+let _signOut = null;
+let _onAuthStateChanged = null;
+let _doc = null;
+let _setDoc = null;
+let _getDoc = null;
+
+export async function initFirebase(config) {
     if (!config?.apiKey || config.apiKey === 'YOUR_API_KEY') return;
     try {
-        const app = initializeApp(config);
-        auth = getAuth(app);
-        db = getFirestore(app);
+        const [appMod, authMod, dbMod] = await Promise.all([
+            import('firebase/app'),
+            import('firebase/auth'),
+            import('firebase/firestore'),
+        ]);
+        const app = appMod.initializeApp(config);
+        auth = authMod.getAuth(app);
+        db = dbMod.getFirestore(app);
+        provider = new authMod.GoogleAuthProvider();
+        _signInWithPopup = authMod.signInWithPopup;
+        _signOut = authMod.signOut;
+        _onAuthStateChanged = authMod.onAuthStateChanged;
+        _doc = dbMod.doc;
+        _setDoc = dbMod.setDoc;
+        _getDoc = dbMod.getDoc;
     } catch (e) {
         console.warn('Firebase não iniciado:', e.message);
     }
@@ -33,19 +47,19 @@ export function getCurrentUser() {
 
 export function onAuthChange(callback) {
     if (!auth) return () => {};
-    return onAuthStateChanged(auth, callback);
+    return _onAuthStateChanged(auth, callback);
 }
 
 export async function signIn() {
     if (!auth) return null;
-    const result = await signInWithPopup(auth, provider);
+    const result = await _signInWithPopup(auth, provider);
     return result.user;
 }
 
 export async function signOutUser() {
     if (!auth) return;
     await flushCloudSave();
-    await fbSignOut(auth);
+    await _signOut(auth);
 }
 
 // Debounce das escritas no Firestore: saveProgress corre a cada resposta certa
@@ -61,7 +75,7 @@ async function flushSave() {
     pendingData = null;
     if (!db || !auth?.currentUser || !data) return;
     try {
-        await setDoc(doc(db, 'progress', auth.currentUser.uid), {
+        await _setDoc(_doc(db, 'progress', auth.currentUser.uid), {
             ...data,
             updatedAt: Date.now(),
         });
@@ -87,7 +101,7 @@ export function flushCloudSave() {
 export async function cloudLoad() {
     if (!db || !auth?.currentUser) return null;
     try {
-        const snap = await getDoc(doc(db, 'progress', auth.currentUser.uid));
+        const snap = await _getDoc(_doc(db, 'progress', auth.currentUser.uid));
         return snap.exists() ? snap.data() : null;
     } catch (e) {
         return null;
