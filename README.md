@@ -6,7 +6,8 @@ Plain HTML, CSS and JavaScript modules. No framework, no build step required to 
 
 ## Features
 
-- **51 phrases** across CEFR levels **A1, A2 and B1** (17 / 17 / 17)
+- **146 phrases** across CEFR levels **A1, A2 and B1** (54 / 52 / 40)
+- **12 categories**: Greetings, Useful, Travel, Food, Numbers, Daily, Work, Shopping, Health, Directions, Weather and Time
 - Switch the target language between **English** and **German**
 - Portuguese translation shown alongside every phrase
 - **Text-to-speech** playback of the target phrase (Web Speech API)
@@ -94,6 +95,7 @@ Each phrase carries its text for both target languages plus the Portuguese trans
 ```js
 {
   level: "A1",
+  cat: "Greetings",
   en: "Good morning",
   de: "Guten Morgen",
   pt: "Bom dia"

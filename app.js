@@ -58,6 +58,125 @@ export const library = [
     { level: "B1", cat: "Numbers",  en: "We have been waiting for forty minutes", de: "Wir warten seit vierzig Minuten", pt: "Estamos à espera há quarenta minutos" },
     { level: "B1", cat: "Useful",   en: "It depends on the situation",   de: "Das hängt von der Situation ab",       pt: "Depende da situação" },
     { level: "B1", cat: "Travel",   en: "I would like to book a room for two nights", de: "Ich möchte ein Zimmer für zwei Nächte buchen", pt: "Gostaria de reservar um quarto para duas noites" },
+
+    // ===================== Expansão =====================
+
+    // Greetings
+    { level: "A1", cat: "Greetings", en: "Hello, how are you?",                de: "Hallo, wie geht es Ihnen?",                 pt: "Olá, como está?" },
+    { level: "A1", cat: "Greetings", en: "I'm fine, thank you",                de: "Mir geht es gut, danke",                    pt: "Estou bem, obrigado(a)" },
+    { level: "A1", cat: "Greetings", en: "Goodbye",                            de: "Auf Wiedersehen",                           pt: "Adeus" },
+    { level: "A1", cat: "Greetings", en: "See you soon",                       de: "Bis bald",                                  pt: "Até breve" },
+    { level: "A1", cat: "Greetings", en: "Excuse me",                          de: "Entschuldigung",                            pt: "Com licença" },
+    { level: "A1", cat: "Greetings", en: "I'm sorry",                          de: "Es tut mir leid",                           pt: "Desculpe" },
+    { level: "A2", cat: "Greetings", en: "Welcome!",                           de: "Herzlich willkommen!",                      pt: "Bem-vindo(a)!" },
+
+    // Useful
+    { level: "A1", cat: "Useful",    en: "I need help",                        de: "Ich brauche Hilfe",                         pt: "Preciso de ajuda" },
+    { level: "A1", cat: "Useful",    en: "I have a question",                  de: "Ich habe eine Frage",                       pt: "Tenho uma pergunta" },
+    { level: "A1", cat: "Useful",    en: "No problem",                         de: "Kein Problem",                              pt: "Não há problema" },
+    { level: "A1", cat: "Useful",    en: "Of course",                          de: "Natürlich",                                 pt: "Claro" },
+    { level: "A2", cat: "Useful",    en: "What does this mean?",               de: "Was bedeutet das?",                         pt: "O que significa isto?" },
+    { level: "A2", cat: "Useful",    en: "How do you spell that?",             de: "Wie schreibt man das?",                     pt: "Como se escreve isso?" },
+    { level: "A2", cat: "Useful",    en: "I'm not sure",                       de: "Ich bin mir nicht sicher",                  pt: "Não tenho a certeza" },
+    { level: "B1", cat: "Useful",    en: "I agree with you",                   de: "Ich stimme Ihnen zu",                       pt: "Concordo consigo" },
+    { level: "B1", cat: "Useful",    en: "Could you explain that again?",      de: "Könnten Sie das noch einmal erklären?",     pt: "Poderia explicar isso outra vez?" },
+
+    // Food
+    { level: "A1", cat: "Food",      en: "Enjoy your meal",                    de: "Guten Appetit",                             pt: "Bom apetite" },
+    { level: "A1", cat: "Food",      en: "Cheers!",                            de: "Prost!",                                    pt: "Saúde!" },
+    { level: "A2", cat: "Food",      en: "I would like to order",             de: "Ich möchte bestellen",                      pt: "Queria pedir" },
+    { level: "A2", cat: "Food",      en: "Is this spicy?",                     de: "Ist das scharf?",                           pt: "Isto é picante?" },
+    { level: "A2", cat: "Food",      en: "I don't eat meat",                   de: "Ich esse kein Fleisch",                     pt: "Não como carne" },
+    { level: "A2", cat: "Food",      en: "Another beer, please",               de: "Noch ein Bier, bitte",                      pt: "Mais uma cerveja, por favor" },
+    { level: "B1", cat: "Food",      en: "What do you recommend?",             de: "Was empfehlen Sie?",                        pt: "O que recomenda?" },
+    { level: "B1", cat: "Food",      en: "The food was excellent",             de: "Das Essen war ausgezeichnet",               pt: "A comida estava excelente" },
+
+    // Travel
+    { level: "A2", cat: "Travel",    en: "I have a reservation",               de: "Ich habe eine Reservierung",                pt: "Tenho uma reserva" },
+    { level: "A2", cat: "Travel",    en: "One ticket to Berlin, please",       de: "Eine Fahrkarte nach Berlin, bitte",         pt: "Um bilhete para Berlim, por favor" },
+    { level: "A2", cat: "Travel",    en: "Is this seat free?",                 de: "Ist dieser Platz frei?",                    pt: "Este lugar está livre?" },
+    { level: "A2", cat: "Travel",    en: "I would like to check in",           de: "Ich möchte einchecken",                     pt: "Queria fazer o check-in" },
+    { level: "B1", cat: "Travel",    en: "When does the next train leave?",    de: "Wann fährt der nächste Zug?",               pt: "Quando parte o próximo comboio?" },
+    { level: "B1", cat: "Travel",    en: "Where is my gate?",                  de: "Wo ist mein Flugsteig?",                    pt: "Onde é a minha porta de embarque?" },
+    { level: "B1", cat: "Travel",    en: "I missed my flight",                 de: "Ich habe meinen Flug verpasst",             pt: "Perdi o meu voo" },
+
+    // Daily
+    { level: "A1", cat: "Daily",     en: "I am going home",                    de: "Ich gehe nach Hause",                       pt: "Vou para casa" },
+    { level: "A1", cat: "Daily",     en: "I am learning German",               de: "Ich lerne Deutsch",                         pt: "Estou a aprender alemão" },
+    { level: "A2", cat: "Daily",     en: "I wake up early",                    de: "Ich stehe früh auf",                        pt: "Acordo cedo" },
+    { level: "A2", cat: "Daily",     en: "I am very busy today",               de: "Ich bin heute sehr beschäftigt",            pt: "Estou muito ocupado(a) hoje" },
+    { level: "A2", cat: "Daily",     en: "I need to go shopping",              de: "Ich muss einkaufen gehen",                  pt: "Preciso de ir às compras" },
+    { level: "B1", cat: "Daily",     en: "What are you doing this weekend?",   de: "Was machst du dieses Wochenende?",          pt: "O que vais fazer este fim de semana?" },
+
+    // Work
+    { level: "A2", cat: "Work",      en: "I have a lot of work today",         de: "Ich habe heute viel Arbeit",                pt: "Tenho muito trabalho hoje" },
+    { level: "A2", cat: "Work",      en: "I will send you an email",           de: "Ich schicke Ihnen eine E-Mail",             pt: "Vou enviar-lhe um e-mail" },
+    { level: "B1", cat: "Work",      en: "Can we reschedule the meeting?",     de: "Können wir das Treffen verschieben?",       pt: "Podemos remarcar a reunião?" },
+    { level: "B1", cat: "Work",      en: "The deadline is on Friday",          de: "Die Frist ist am Freitag",                  pt: "O prazo é na sexta-feira" },
+    { level: "B1", cat: "Work",      en: "Let me think about it",              de: "Lassen Sie mich darüber nachdenken",        pt: "Deixe-me pensar nisso" },
+
+    // Shopping
+    { level: "A1", cat: "Shopping",  en: "I'll take it",                       de: "Ich nehme es",                              pt: "Levo este" },
+    { level: "A1", cat: "Shopping",  en: "This is too expensive",              de: "Das ist zu teuer",                          pt: "Isto é demasiado caro" },
+    { level: "A1", cat: "Shopping",  en: "Where can I pay?",                   de: "Wo kann ich bezahlen?",                     pt: "Onde posso pagar?" },
+    { level: "A1", cat: "Shopping",  en: "Can I pay by card?",                 de: "Kann ich mit Karte zahlen?",                pt: "Posso pagar com cartão?" },
+    { level: "A2", cat: "Shopping",  en: "I would like to pay",                de: "Ich möchte bezahlen",                       pt: "Queria pagar" },
+    { level: "A2", cat: "Shopping",  en: "I'm just looking, thank you",        de: "Ich schaue mich nur um, danke",             pt: "Estou só a ver, obrigado(a)" },
+    { level: "A2", cat: "Shopping",  en: "Is this on sale?",                   de: "Ist das im Angebot?",                       pt: "Isto está em promoção?" },
+    { level: "A2", cat: "Shopping",  en: "Do you have a smaller size?",        de: "Haben Sie eine kleinere Größe?",            pt: "Tem um tamanho mais pequeno?" },
+    { level: "A2", cat: "Shopping",  en: "Do you have this in a bigger size?", de: "Haben Sie das in einer größeren Größe?",    pt: "Tem isto num tamanho maior?" },
+    { level: "B1", cat: "Shopping",  en: "Can I get a receipt?",               de: "Kann ich eine Quittung bekommen?",          pt: "Pode dar-me um recibo?" },
+    { level: "B1", cat: "Shopping",  en: "Where are the fitting rooms?",       de: "Wo sind die Umkleidekabinen?",              pt: "Onde ficam os provadores?" },
+    { level: "B1", cat: "Shopping",  en: "Can I return this?",                 de: "Kann ich das zurückgeben?",                 pt: "Posso devolver isto?" },
+
+    // Health
+    { level: "A1", cat: "Health",    en: "I need a doctor",                    de: "Ich brauche einen Arzt",                    pt: "Preciso de um médico" },
+    { level: "A1", cat: "Health",    en: "I don't feel well",                  de: "Mir geht es nicht gut",                     pt: "Não me sinto bem" },
+    { level: "A1", cat: "Health",    en: "I have a headache",                  de: "Ich habe Kopfschmerzen",                    pt: "Tenho dores de cabeça" },
+    { level: "A1", cat: "Health",    en: "I have a fever",                     de: "Ich habe Fieber",                           pt: "Tenho febre" },
+    { level: "A1", cat: "Health",    en: "It hurts here",                      de: "Es tut hier weh",                           pt: "Dói-me aqui" },
+    { level: "A2", cat: "Health",    en: "Where is the nearest pharmacy?",     de: "Wo ist die nächste Apotheke?",              pt: "Onde fica a farmácia mais próxima?" },
+    { level: "A2", cat: "Health",    en: "Call an ambulance, please",          de: "Rufen Sie einen Krankenwagen, bitte",       pt: "Chame uma ambulância, por favor" },
+    { level: "A2", cat: "Health",    en: "My stomach hurts",                   de: "Ich habe Bauchschmerzen",                   pt: "Tenho dores de barriga" },
+    { level: "B1", cat: "Health",    en: "I am allergic to penicillin",        de: "Ich bin allergisch gegen Penizillin",       pt: "Sou alérgico(a) à penicilina" },
+    { level: "B1", cat: "Health",    en: "Do I need a prescription?",          de: "Brauche ich ein Rezept?",                   pt: "Preciso de uma receita?" },
+    { level: "B1", cat: "Health",    en: "I have caught a cold",               de: "Ich habe mich erkältet",                    pt: "Estou constipado(a)" },
+    { level: "B1", cat: "Health",    en: "Can you recommend a doctor?",        de: "Können Sie einen Arzt empfehlen?",          pt: "Pode recomendar um médico?" },
+
+    // Directions
+    { level: "A1", cat: "Directions", en: "Where is the train station?",       de: "Wo ist der Bahnhof?",                       pt: "Onde fica a estação de comboios?" },
+    { level: "A1", cat: "Directions", en: "Is it far from here?",              de: "Ist es weit von hier?",                     pt: "É longe daqui?" },
+    { level: "A1", cat: "Directions", en: "Turn left",                         de: "Biegen Sie links ab",                       pt: "Vire à esquerda" },
+    { level: "A1", cat: "Directions", en: "Turn right",                        de: "Biegen Sie rechts ab",                      pt: "Vire à direita" },
+    { level: "A1", cat: "Directions", en: "Go straight ahead",                 de: "Gehen Sie geradeaus",                       pt: "Siga em frente" },
+    { level: "A2", cat: "Directions", en: "How do I get to the city centre?",  de: "Wie komme ich ins Stadtzentrum?",           pt: "Como vou para o centro da cidade?" },
+    { level: "A2", cat: "Directions", en: "It's on the corner",                de: "Es ist an der Ecke",                        pt: "É na esquina" },
+    { level: "A2", cat: "Directions", en: "Can you show me on the map?",       de: "Können Sie es mir auf der Karte zeigen?",   pt: "Pode mostrar-me no mapa?" },
+    { level: "A2", cat: "Directions", en: "How far is the airport?",           de: "Wie weit ist der Flughafen?",               pt: "A que distância fica o aeroporto?" },
+    { level: "A2", cat: "Directions", en: "I'm looking for this address",      de: "Ich suche diese Adresse",                   pt: "Estou à procura desta morada" },
+    { level: "B1", cat: "Directions", en: "Which bus goes to the centre?",     de: "Welcher Bus fährt ins Zentrum?",            pt: "Que autocarro vai para o centro?" },
+    { level: "B1", cat: "Directions", en: "Is there a bus stop nearby?",       de: "Gibt es eine Bushaltestelle in der Nähe?",  pt: "Há uma paragem de autocarro perto?" },
+
+    // Weather
+    { level: "A1", cat: "Weather",   en: "It is raining",                      de: "Es regnet",                                 pt: "Está a chover" },
+    { level: "A1", cat: "Weather",   en: "It is sunny",                        de: "Es ist sonnig",                             pt: "Está sol" },
+    { level: "A1", cat: "Weather",   en: "It is very cold today",              de: "Heute ist es sehr kalt",                    pt: "Hoje está muito frio" },
+    { level: "A1", cat: "Weather",   en: "It is very hot",                     de: "Es ist sehr heiß",                          pt: "Está muito calor" },
+    { level: "A1", cat: "Weather",   en: "It is windy",                        de: "Es ist windig",                             pt: "Está vento" },
+    { level: "A1", cat: "Weather",   en: "The weather is nice",                de: "Das Wetter ist schön",                      pt: "O tempo está bom" },
+    { level: "A2", cat: "Weather",   en: "What is the weather like today?",    de: "Wie ist das Wetter heute?",                 pt: "Como está o tempo hoje?" },
+    { level: "A2", cat: "Weather",   en: "It is going to snow",                de: "Es wird schneien",                          pt: "Vai nevar" },
+    { level: "B1", cat: "Weather",   en: "I think it will rain tomorrow",      de: "Ich glaube, es wird morgen regnen",         pt: "Acho que vai chover amanhã" },
+
+    // Time
+    { level: "A1", cat: "Time",      en: "See you tomorrow",                   de: "Bis morgen",                                pt: "Até amanhã" },
+    { level: "A1", cat: "Time",      en: "See you later",                      de: "Bis später",                                pt: "Até logo" },
+    { level: "A1", cat: "Time",      en: "What day is it today?",              de: "Welcher Tag ist heute?",                    pt: "Que dia é hoje?" },
+    { level: "A2", cat: "Time",      en: "It is half past three",              de: "Es ist halb vier",                          pt: "São três e meia" },
+    { level: "A2", cat: "Time",      en: "The meeting is at nine o'clock",     de: "Das Treffen ist um neun Uhr",               pt: "A reunião é às nove horas" },
+    { level: "A2", cat: "Time",      en: "The shop opens at nine",             de: "Das Geschäft öffnet um neun",               pt: "A loja abre às nove" },
+    { level: "B1", cat: "Time",      en: "I will be there in ten minutes",     de: "Ich bin in zehn Minuten da",                pt: "Chego daqui a dez minutos" },
+    { level: "B1", cat: "Time",      en: "It is almost midnight",              de: "Es ist fast Mitternacht",                   pt: "É quase meia-noite" },
 ];
 
 export const LANGUAGES = ['en', 'de'];
