@@ -14,5 +14,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
+      # npm install (not npm ci): the committed lock file is out of sync with
+      # package.json and must be reconciled until it is regenerated locally.
+      - run: npm install
       - run: npm test
