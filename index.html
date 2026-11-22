@@ -48,13 +48,14 @@
         #status { margin-top: 15px; font-size: 0.9rem; color: var(--text-sec); min-height: 3em; }
         .points-box { color: #4ade80; font-weight: bold; margin-bottom: 10px; }
 
-        .selector-row { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; }
-        .btn-lang, .btn-level {
+        .selector-row { display: flex; gap: 8px; justify-content: center; align-items: center; margin-bottom: 10px; }
+        .row-label { color: var(--text-sec); font-size: 0.72rem; min-width: 52px; text-align: right; }
+        .btn-lang, .btn-level, .btn-base {
             background: #334155; color: var(--text-sec);
             padding: 7px 14px; border-radius: 20px; font-size: 0.8rem;
             border: 1px solid transparent;
         }
-        .btn-lang.active, .btn-level.active { color: var(--primary); border-color: var(--primary); }
+        .btn-lang.active, .btn-level.active, .btn-base.active { color: var(--primary); border-color: var(--primary); }
         .auth-row { text-align: right; margin-bottom: 8px; }
         .btn-auth { background: transparent; color: var(--text-sec); font-size: 0.75rem; padding: 5px 10px; border-radius: 10px; border: 1px solid #334155; }
         .btn-auth:hover { border-color: var(--primary); color: var(--primary); }
@@ -91,9 +92,17 @@
     <div class="auth-row">
         <button id="auth-btn" class="btn-auth" aria-label="Sincronizar progresso" title="Login para sincronizar entre dispositivos">☁️ Sync</button>
     </div>
-    <div class="selector-row" role="group" aria-label="Idioma">
-        <button class="btn-lang active" data-lang="en" aria-label="Inglês">🇬🇧 EN</button>
-        <button class="btn-lang" data-lang="de" aria-label="Alemão">🇩🇪 DE</button>
+    <div class="selector-row" role="group" aria-label="A minha língua (a dica aparece nesta)">
+        <span class="row-label">Falo</span>
+        <button class="btn-base" data-base="en" aria-label="Inglês">🇬🇧</button>
+        <button class="btn-base" data-base="de" aria-label="Alemão">🇩🇪</button>
+        <button class="btn-base active" data-base="pt" aria-label="Português">🇵🇹</button>
+    </div>
+    <div class="selector-row" role="group" aria-label="Língua que estou a aprender">
+        <span class="row-label">Aprendo</span>
+        <button class="btn-lang active" data-lang="en" aria-label="Inglês">🇬🇧</button>
+        <button class="btn-lang" data-lang="de" aria-label="Alemão">🇩🇪</button>
+        <button class="btn-lang" data-lang="pt" aria-label="Português">🇵🇹</button>
     </div>
     <div class="selector-row" role="group" aria-label="Nível CEFR">
         <button class="btn-level active" data-level="A1">A1</button>
@@ -127,7 +136,7 @@
 </main>
 
 <script type="module">
-    import { initAudio, playVoice, startRecognition, nextPhrase, switchLanguage, switchLevel, switchCategory, loadProgress, loadFromCloud, updateStatsUI, CATEGORIES, ALL_CATEGORIES, cloud } from './app.js';
+    import { initAudio, playVoice, startRecognition, nextPhrase, switchLanguage, switchBase, switchLevel, switchCategory, loadProgress, loadFromCloud, updateStatsUI, CATEGORIES, ALL_CATEGORIES, cloud } from './app.js';
     import { initFirebase, onAuthChange, signIn, signOutUser, getCurrentUser, cloudSave, cloudLoad } from './firebase.js';
 
     // Preenche o seletor de categorias a partir da biblioteca (All + categorias).
@@ -203,6 +212,9 @@
 
     document.querySelectorAll('[data-lang]').forEach(btn => {
         btn.addEventListener('click', () => switchLanguage(btn.dataset.lang));
+    });
+    document.querySelectorAll('[data-base]').forEach(btn => {
+        btn.addEventListener('click', () => switchBase(btn.dataset.base));
     });
     document.querySelectorAll('[data-level]').forEach(btn => {
         btn.addEventListener('click', () => switchLevel(btn.dataset.level));
