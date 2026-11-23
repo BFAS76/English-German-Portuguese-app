@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>english-german-portuguese-app</title>
 
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -29,10 +29,15 @@
         body {
             font-family: system-ui, -apple-system, sans-serif;
             background: var(--bg); color: white; margin: 0;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh;
+            height: 100dvh; /* evita o corte no iOS quando a barra de endereço aparece/desaparece */
+            /* Respeita o notch / Dynamic Island / indicador inferior no iPhone */
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            box-sizing: border-box;
             overflow: hidden;
         }
-        .container { width: 90%; max-width: 400px; background: var(--card); padding: 25px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; max-height: 92vh; overflow-y: auto; }
+        .container { width: 90%; max-width: 400px; background: var(--card); padding: 25px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; max-height: 100%; overflow-y: auto; }
         .category { font-size: 0.7rem; color: var(--primary); text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
         #phrase-display { font-size: 1.4rem; font-weight: bold; margin: 15px 0 5px 0; color: #f8fafc; line-height: 1.3; }
         #translation-display { font-size: 1rem; color: var(--text-sec); font-style: italic; margin-bottom: 20px; min-height: 1.2em; }
@@ -83,6 +88,24 @@
         .stats-total { color: #4ade80; font-weight: bold; margin-bottom: 8px; text-align: center; }
         .stats-title { color: var(--primary); text-transform: uppercase; font-size: 0.68rem; font-weight: bold; margin: 8px 0 3px; }
         .stats-value { color: var(--text-sec); line-height: 1.5; word-break: break-word; }
+
+        /* Dica de instalação no iOS (o Safari não mostra aviso automático). */
+        .ios-install {
+            position: fixed; left: 12px; right: 12px;
+            bottom: calc(12px + env(safe-area-inset-bottom));
+            background: var(--card); color: #f8fafc;
+            border: 1px solid var(--primary); border-radius: 16px;
+            padding: 14px 16px; font-size: 0.85rem; line-height: 1.4;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 50;
+            display: flex; align-items: center; gap: 10px; text-align: left;
+        }
+        .ios-install[hidden] { display: none; }
+        #ios-install-text { flex: 1; }
+        .ios-install b { color: var(--primary); }
+        .ios-install-close {
+            background: transparent; color: var(--text-sec); border: none;
+            font-size: 1.1rem; padding: 4px 8px; cursor: pointer; line-height: 1;
+        }
     </style>
 </head>
 <body>
@@ -134,6 +157,11 @@
         <div id="stats-cats" class="stats-value"></div>
     </div>
 </main>
+
+<div id="ios-install" class="ios-install" role="dialog" aria-label="Como instalar a app no iPhone ou iPad" hidden>
+    <span id="ios-install-text"></span>
+    <button id="ios-install-close" class="ios-install-close" aria-label="Fechar">✕</button>
+</div>
 
 <script type="module">
     import { initAudio, playVoice, startRecognition, nextPhrase, switchLanguage, switchBase, switchLevel, switchCategory, loadProgress, loadFromCloud, updateStatsUI, CATEGORIES, ALL_CATEGORIES, cloud } from './app.js';
@@ -226,6 +254,38 @@
             navigator.serviceWorker.register('sw.js').catch(() => {});
         });
     }
+
+    // Dica de instalação no iOS: ao contrário do Android, o Safari não dispara
+    // o aviso automático de instalação. A única forma é Partilhar → "Adicionar
+    // ao ecrã principal", e só funciona no Safari (não em Chrome/Firefox iOS nem
+    // nos navegadores embutidos de apps como Instagram/Facebook). Explicamos isso.
+    (function iosInstallHint() {
+        const ua = window.navigator.userAgent || '';
+        const isIOS = /iPad|iPhone|iPod/.test(ua) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS 13+
+        if (!isIOS) return;
+
+        const isStandalone = window.navigator.standalone === true ||
+            window.matchMedia('(display-mode: standalone)').matches;
+        if (isStandalone) return; // já está instalada
+
+        let dismissed = false;
+        try { dismissed = localStorage.getItem('iosInstallDismissed') === '1'; } catch {}
+        if (dismissed) return;
+
+        const otherBrowser = /crios|fxios|edgios|opt\//i.test(ua); // Chrome/Firefox/Edge/Opera iOS
+        const text = document.getElementById('ios-install-text');
+        text.innerHTML = otherBrowser
+            ? '📲 Para instalar no iPhone/iPad, abre este site no <b>Safari</b> e usa <b>Partilhar ⬆️ → "Adicionar ao ecrã principal"</b>.'
+            : '📲 Para instalar: toca em <b>Partilhar ⬆️</b> e depois em <b>"Adicionar ao ecrã principal"</b>.';
+
+        const banner = document.getElementById('ios-install');
+        banner.hidden = false;
+        document.getElementById('ios-install-close').addEventListener('click', () => {
+            banner.hidden = true;
+            try { localStorage.setItem('iosInstallDismissed', '1'); } catch {}
+        });
+    })();
 </script>
 </body>
 </html>
