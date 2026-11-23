@@ -77,10 +77,18 @@ next phrase.
 an exact match, or a partial one that covers at least `MATCH_COVERAGE` (60%) of
 the target length, so a single short word does not validate a whole phrase.
 
+**Phrase selection** — `pickNextPhrase` is a light spaced-repetition picker (pure,
+options via `opts`). It avoids the current phrase and the last `RECENT_WINDOW`
+shown (`state.recent`, session-only, capped to the pool size so small pools still
+cycle), then weighted-random among the rest by `1 / (1 + mastery)` — phrases you
+miss appear more, mastered ones less, but never drop to zero. `state.mastery`
+(`{ [en]: correctCount }`) is incremented in `recordProgress`.
+
 **Persistence** — `localStorage` keys `englishAppScore`, `englishAppLanguage`,
-`englishAppLevel`. When signed in, progress also syncs to Firestore; cloud writes
-are debounced (`SAVE_DEBOUNCE_MS`, 1.5s) and `loadFromCloud` only raises the
-local score, never lowers it.
+`englishAppBase`, `englishAppLevel`, `englishAppCategory`, `englishAppStats`,
+`englishAppMastery`. When signed in, progress also syncs to Firestore; cloud writes
+are debounced (`SAVE_DEBOUNCE_MS`, 1.5s). `loadFromCloud` only raises the local
+score, and merges `stats` / `mastery` by max per key, never lowering them.
 
 ## Conventions
 
