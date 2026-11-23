@@ -199,6 +199,8 @@ export const state = {
     level: 'A1',
     category: ALL_CATEGORIES,
     stats: emptyStats(),
+    mastery: {},       // domínio por frase: { [en]: nº de acertos } — persistido
+    recent: [],        // frases mostradas há pouco (só nesta sessão) — evita repetir cedo
 };
 
 export function resetState() {
@@ -210,6 +212,8 @@ export function resetState() {
     state.level = 'A1';
     state.category = ALL_CATEGORIES;
     state.stats = emptyStats();
+    state.mastery = {};
+    state.recent = [];
 }
 
 export function getLangCode(lang = state.language) {
@@ -233,18 +237,42 @@ export function checkMatch(spoken, target) {
     return t.includes(s) && s.length >= t.length * MATCH_COVERAGE;
 }
 
-export function pickNextPhrase(lib, currentEn, level = null, category = null) {
+// Quantas frases mostradas há pouco se evitam antes de poder repetir, para
+// não aparecer sempre a mesma a seguir. Fica limitada ao tamanho do conjunto.
+export const RECENT_WINDOW = 5;
+
+// Escolhe a frase seguinte com "repetição espaçada" simples:
+//  - evita a frase atual e as últimas mostradas (janela `recent`), para dar
+//    consistência e não repetir cedo;
+//  - entre as candidatas, dá mais peso às menos dominadas (menos acertos), por
+//    isso as frases que ainda falhas aparecem mais vezes e as já dominadas
+//    menos — mas nunca desaparecem, para continuar a haver revisão.
+// Mantém-se pura e testável: o domínio, os recentes e o gerador aleatório
+// entram por `opts`, não por estado global.
+export function pickNextPhrase(lib, currentEn, level = null, category = null, opts = {}) {
+    const { mastery = {}, recent = [], rand = Math.random } = opts;
     let pool = level ? lib.filter(p => p.level === level) : lib;
     if (category && category !== ALL_CATEGORIES) {
         pool = pool.filter(p => p.cat === category);
     }
     if (pool.length === 0) return null;
     if (pool.length === 1) return pool[0];
-    let phrase;
-    do {
-        phrase = pool[Math.floor(Math.random() * pool.length)];
-    } while (phrase.en === currentEn);
-    return phrase;
+
+    const avoid = new Set([currentEn, ...recent]);
+    let candidates = pool.filter(p => !avoid.has(p.en));
+    if (candidates.length === 0) {
+        // A janela cobriu tudo: recomeça, evitando apenas a frase atual.
+        candidates = pool.filter(p => p.en !== currentEn);
+    }
+
+    const weightOf = (p) => 1 / (1 + (mastery[p.en] || 0));
+    const total = candidates.reduce((sum, p) => sum + weightOf(p), 0);
+    let r = rand() * total;
+    for (const p of candidates) {
+        r -= weightOf(p);
+        if (r < 0) return p;
+    }
+    return candidates[candidates.length - 1]; // salvaguarda por arredondamento
 }
 
 export function updateLanguageUI() {
@@ -315,11 +343,23 @@ export function recordProgress(phrase) {
     const { byCategory, byLevel } = state.stats;
     byCategory[phrase.cat] = (byCategory[phrase.cat] || 0) + 1;
     byLevel[phrase.level] = (byLevel[phrase.level] || 0) + 1;
+    if (phrase.en) state.mastery[phrase.en] = (state.mastery[phrase.en] || 0) + 1;
     updateStatsUI();
 }
 
+// Tamanho do conjunto atual (nível + categoria), para dimensionar a janela.
+function currentPoolSize() {
+    return library.filter(p =>
+        (!state.level || p.level === state.level) &&
+        (state.category === ALL_CATEGORIES || p.cat === state.category)
+    ).length;
+}
+
 export function nextPhrase() {
-    const phrase = pickNextPhrase(library, state.current.en, state.level, state.category);
+    const phrase = pickNextPhrase(library, state.current.en, state.level, state.category, {
+        mastery: state.mastery,
+        recent: state.recent,
+    });
     if (!phrase) {
         const status = document.getElementById('status');
         if (status) {
@@ -329,6 +369,11 @@ export function nextPhrase() {
         return;
     }
     state.current = phrase;
+    // Regista na janela de recentes e corta ao tamanho do conjunto, para
+    // evitar repetição a curto prazo sem nunca bloquear a escolha.
+    state.recent.push(phrase.en);
+    const maxWindow = Math.min(RECENT_WINDOW, Math.max(0, currentPoolSize() - 1));
+    while (state.recent.length > maxWindow) state.recent.shift();
     document.getElementById('cat-display').innerText = `${state.current.cat} · ${state.current.level}`;
     renderPhrase();
     const status = document.getElementById('status');
@@ -381,6 +426,7 @@ export function saveProgress() {
     localStorage.setItem('englishAppLevel', state.level);
     localStorage.setItem('englishAppCategory', state.category);
     localStorage.setItem('englishAppStats', JSON.stringify(state.stats));
+    localStorage.setItem('englishAppMastery', JSON.stringify(state.mastery));
     cloud.save?.({
         score: state.score,
         language: state.language,
@@ -388,6 +434,7 @@ export function saveProgress() {
         level: state.level,
         category: state.category,
         stats: state.stats,
+        mastery: state.mastery,
     });
 }
 
@@ -427,6 +474,10 @@ export async function loadFromCloud() {
         state.stats = mergeStats(state.stats, sanitizeStats(data.stats));
         localStorage.setItem('englishAppStats', JSON.stringify(state.stats));
     }
+    if (data.mastery) {
+        state.mastery = mergeMastery(state.mastery, sanitizeMastery(data.mastery));
+        localStorage.setItem('englishAppMastery', JSON.stringify(state.mastery));
+    }
     updateLanguageUI();
     updateBaseUI();
     updateLevelUI();
@@ -462,6 +513,11 @@ export function loadProgress() {
         try { state.stats = sanitizeStats(JSON.parse(savedStats)); } catch (e) { /* ignora */ }
     }
 
+    const savedMastery = localStorage.getItem('englishAppMastery');
+    if (savedMastery) {
+        try { state.mastery = sanitizeMastery(JSON.parse(savedMastery)); } catch (e) { /* ignora */ }
+    }
+
     updateLanguageUI();
     updateBaseUI();
     updateLevelUI();
@@ -489,6 +545,24 @@ function mergeStats(a, b) {
         const keys = new Set([...Object.keys(a[dim]), ...Object.keys(b[dim])]);
         for (const k of keys) out[dim][k] = Math.max(a[dim][k] || 0, b[dim][k] || 0);
     }
+    return out;
+}
+
+// Domínio por frase: só pares { en: nº >= 0 }.
+function sanitizeMastery(obj) {
+    const out = {};
+    if (!obj || typeof obj !== 'object') return out;
+    for (const [k, v] of Object.entries(obj)) {
+        if (typeof v === 'number' && Number.isFinite(v) && v >= 0) out[k] = v;
+    }
+    return out;
+}
+
+// Ao sincronizar, mantém o maior valor por frase (nunca baixa o domínio).
+function mergeMastery(a, b) {
+    const out = {};
+    const keys = new Set([...Object.keys(a || {}), ...Object.keys(b || {})]);
+    for (const k of keys) out[k] = Math.max((a && a[k]) || 0, (b && b[k]) || 0);
     return out;
 }
 

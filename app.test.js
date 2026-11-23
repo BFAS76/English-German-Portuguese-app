@@ -32,6 +32,7 @@ import {
     updateStatsUI,
     recordProgress,
     countCorrect,
+    RECENT_WINDOW,
 } from './app.js';
 
 const DOM_TEMPLATE = `
@@ -939,6 +940,113 @@ describe('loadFromCloud (categoria e stats)', () => {
         expect(state.stats.byCategory.Food).toBe(5);
         expect(state.stats.byCategory.Work).toBe(3);
         expect(state.stats.byLevel.A1).toBe(8);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// pickNextPhrase — repetição espaçada (janela + peso por domínio)
+// ---------------------------------------------------------------------------
+describe('pickNextPhrase (repetição espaçada)', () => {
+    const LIB = [
+        { level: 'A1', cat: 'T', en: 'A', de: 'a', pt: 'a' },
+        { level: 'A1', cat: 'T', en: 'B', de: 'b', pt: 'b' },
+        { level: 'A1', cat: 'T', en: 'C', de: 'c', pt: 'c' },
+        { level: 'A1', cat: 'T', en: 'D', de: 'd', pt: 'd' },
+    ];
+
+    it('evita a frase atual e as recentes (não repete cedo)', () => {
+        for (let i = 0; i < 40; i++) {
+            const p = pickNextPhrase(LIB, 'A', 'A1', 'T', { recent: ['B', 'C'] });
+            expect(['A', 'B', 'C']).not.toContain(p.en);
+            expect(p.en).toBe('D');
+        }
+    });
+
+    it('recomeça (ignora a janela) quando ela cobre tudo menos a atual', () => {
+        for (let i = 0; i < 40; i++) {
+            const p = pickNextPhrase(LIB, 'A', 'A1', 'T', { recent: ['B', 'C', 'D'] });
+            expect(p.en).not.toBe('A');
+            expect(['B', 'C', 'D']).toContain(p.en);
+        }
+    });
+
+    it('dá mais peso às frases menos dominadas', () => {
+        const two = [
+            { level: 'A1', cat: 'T', en: 'weak', de: 'x', pt: 'x' },
+            { level: 'A1', cat: 'T', en: 'strong', de: 'y', pt: 'y' },
+        ];
+        const mastery = { strong: 3 }; // pesos: weak=1, strong=0.25, total=1.25
+        expect(pickNextPhrase(two, null, 'A1', 'T', { mastery, rand: () => 0.5 }).en).toBe('weak');
+        expect(pickNextPhrase(two, null, 'A1', 'T', { mastery, rand: () => 0.95 }).en).toBe('strong');
+    });
+
+    it('as frases falhadas aparecem muito mais do que as dominadas', () => {
+        const two = [
+            { level: 'A1', cat: 'T', en: 'weak', de: 'x', pt: 'x' },
+            { level: 'A1', cat: 'T', en: 'strong', de: 'y', pt: 'y' },
+        ];
+        const mastery = { strong: 9 }; // strong bem mais improvável
+        let weak = 0;
+        for (let i = 0; i < 400; i++) {
+            if (pickNextPhrase(two, null, 'A1', 'T', { mastery }).en === 'weak') weak++;
+        }
+        expect(weak).toBeGreaterThan(300);
+    });
+
+    it('nunca faz a dominada desaparecer de todo (continua a haver revisão)', () => {
+        const two = [
+            { level: 'A1', cat: 'T', en: 'weak', de: 'x', pt: 'x' },
+            { level: 'A1', cat: 'T', en: 'strong', de: 'y', pt: 'y' },
+        ];
+        // rand=0.999 cai sempre na última fatia (a dominada), por maior que seja o domínio
+        expect(pickNextPhrase(two, null, 'A1', 'T', { mastery: { strong: 50 }, rand: () => 0.999 }).en).toBe('strong');
+    });
+
+    it('nextPhrase regista a frase mostrada na janela de recentes', () => {
+        nextPhrase();
+        expect(state.recent.length).toBe(1);
+        expect(state.recent[0]).toBe(state.current.en);
+    });
+
+    it('a janela de recentes nunca excede RECENT_WINDOW', () => {
+        for (let i = 0; i < 30; i++) nextPhrase();
+        expect(state.recent.length).toBeLessThanOrEqual(RECENT_WINDOW);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// persistência do domínio por frase (mastery)
+// ---------------------------------------------------------------------------
+describe('persistência de domínio (mastery)', () => {
+    it('recordProgress incrementa o domínio por frase', () => {
+        recordProgress({ level: 'A1', cat: 'Food', en: 'Good night' });
+        recordProgress({ level: 'A1', cat: 'Food', en: 'Good night' });
+        expect(state.mastery['Good night']).toBe(2);
+    });
+
+    it('guarda e restaura o domínio', () => {
+        recordProgress({ level: 'A1', cat: 'Food', en: 'Good night' });
+        saveProgress();
+        resetState();
+        expect(state.mastery).toEqual({});
+        loadProgress();
+        expect(state.mastery['Good night']).toBe(1);
+    });
+
+    it('ignora domínio corrompido no localStorage', () => {
+        localStorage.setItem('englishAppMastery', 'not-json');
+        loadProgress();
+        expect(state.mastery).toEqual({});
+    });
+
+    it('funde o domínio vindo do Firebase mantendo o máximo por frase', async () => {
+        cloud.load = vi.fn().mockResolvedValueOnce({ score: 0, mastery: { X: 2, Y: 5 } });
+        state.mastery = { X: 7, Z: 1 };
+        await loadFromCloud();
+        expect(state.mastery.X).toBe(7);
+        expect(state.mastery.Y).toBe(5);
+        expect(state.mastery.Z).toBe(1);
+        cloud.load = null;
     });
 });
 
